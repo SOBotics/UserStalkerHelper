@@ -200,16 +200,16 @@
    {
       return new Promise(function(resolve, reject)
       {
-         $.get(`//${HOSTNAME_CHAT}/message/${messageId}`,
-               {
-                  fkey : fkeyChat,
-                  plain: true,
-               })
-               .done((result) =>
-               {
-                  resolve(result);
-               })
-               .fail(reject);
+            $.get(`//${HOSTNAME_CHAT}/message/${messageId}`,
+                  {
+                     fkey : fkeyChat,
+                     plain: true,
+                  })
+                  .done((result) =>
+                  {
+                     resolve(result);
+                  })
+                  .fail(reject);
       });
    }
 
@@ -291,7 +291,10 @@
             reject();
          }
 
-         $.get(`//api.stackexchange.com/2.3/users/${userId}?`
+         // NOTE: Must be explicitly prefixed with "https://" in order to avoid a
+         //       CORS violation. Yes, even though the current protocol for the
+         //       page is already "https://"...
+         $.get(`https://api.stackexchange.com/2.3/users/${userId}?`
                 + `&site=${siteHostname}`
                 + '&sort=creation'
                 + '&order=desc'
