@@ -611,7 +611,7 @@
       const instructions = document.createElement('div');
       instructions.classList.add('swal-text');
       instructions.innerHTML = 'The reason you specify here will be saved in the record when this user account is destroyed. '
-                               + 'A reason is optional; if you do not want to include additional information, '
+                               + 'A reason is optional; if you don\'t want to include additional information, '
                                + 'choose the "custom" reason and simply leave the associated textbox blank. '
                                + 'The user\'s PII and other metadata will always be automatically fetched and '
                                + 'included in the record.';
