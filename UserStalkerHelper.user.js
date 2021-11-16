@@ -200,16 +200,16 @@
    {
       return new Promise(function(resolve, reject)
       {
-            $.get(`//${HOSTNAME_CHAT}/message/${messageId}`,
-                  {
-                     fkey : fkeyChat,
-                     plain: true,
-                  })
-                  .done((result) =>
-                  {
-                     resolve(result);
-                  })
-                  .fail(reject);
+         $.get(`//${HOSTNAME_CHAT}/message/${messageId}`,
+               {
+                  fkey : fkeyChat,
+                  plain: true,
+               })
+               .done((result) =>
+               {
+                  resolve(result);
+               })
+               .fail(reject);
       });
    }
 
