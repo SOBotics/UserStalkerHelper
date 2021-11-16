@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      1.0.0
+// @version      1.1.0
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -217,13 +217,18 @@
    {
       return new Promise(function(resolve, reject)
       {
-         $.post(`//${HOSTNAME_CHAT}/messages/${messageId}`,
-                {
-                  fkey: fkeyChat,
-                  text: messageText,
-                })
-                .done(resolve)
-                .fail(reject);
+         // NOTE: A 1-second delay was added to prevent intermittent 409 (conflict) errors
+         //       when hitting this API too soon after hitting the "/message/" (get) API.
+         setTimeout(() =>
+                    {
+                       $.post(`//${HOSTNAME_CHAT}/messages/${messageId}`,
+                              {
+                                fkey: fkeyChat,
+                                text: messageText,
+                              })
+                              .done(resolve)
+                              .fail(reject);
+                    }, 1000);
       });
    }
 
