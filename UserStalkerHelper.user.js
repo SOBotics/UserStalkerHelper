@@ -160,40 +160,28 @@
    }
 
 
-   function getChatFkey()
+   async function getChatFkey()
    {
-      return new Promise(function(resolve, reject)
-      {
-         if (fkey?.fkey)
-         {
-            resolve(fkey.fkey());
-         }
-         else
-         {
-            // The "search" page does not define the user's chat FKEY anywhere,
-            // so we need to fetch it from a page that does.
-            GM_XML_HTTP_REQUEST(
-            {
-               method : 'GET',
-               url    : `//${HOSTNAME_CHAT}`,
-               onload : (result) =>
-                        {
-                           const fkeyInput = $(result.response).find('input#fkey');
-                           if (fkeyInput && fkeyInput.length)
-                           {
-                              resolve(fkeyInput.val());
-                           }
-                           else
-                           {
-                              alert('Failed to get your chat account\'s FKEY.');
-                              reject();
-                           }
-                        },
-               onerror: reject,
-               onabort: reject,
-            });
-         }
-      });
+        if (fkey?.fkey)
+        {
+            return fkey.fkey();
+        }
+
+        // The "search" page does not define the user's chat FKEY anywhere,
+        // so we need to fetch it from a page that does.
+        const result = await GM_XML_HTTP_REQUEST(
+        {
+           method : 'GET',
+           url    : `//${HOSTNAME_CHAT}`
+        });
+
+        const fkeyInput = $(result.response).find('input#fkey');
+        if (fkeyInput.length) {
+             return fkeyInput.val();
+        }
+
+        alert('Failed to get your chat account\'s FKEY.');
+        throw new Error("chat fkey getter failed");
    }
 
    function getChatMessage(fkeyChat, messageId)
