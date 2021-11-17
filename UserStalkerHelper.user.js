@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      1.1.0
+// @version      1.2.0
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -520,15 +520,22 @@
          {
             // Apply the maximum suspension period (1 year) before destroying the account,
             // skipping the sending of an email to the user's registered email address.
-            // This way, they'll only see the message on the site, which, of course,
-            // means they won't ever see it, since we're about to destroy their account.
+            // Although most users won't see this message (since it'll only be displayed on
+            // the site, and we're about to destroy their account), it is possible that they
+            // see it upon re-creation of the account. In that case, they can only see the
+            // first few words of the message in the global inbox (it will notify them of a
+            // new message, though); they *cannot* click on the inbox item to view the full
+            // message. Therefore, we must keep it *very* short, if they are to be able to
+            // see anything. It's difficult to give much guidance, but this is a pretty good
+            // compromise. It is all that will fit in the preview, down to the *letter*.
+            // The contraction "you're" must be used; "you are" is too long!
+            // See also: https://chat.stackexchange.com/transcript/message/59625219#59625219
             sendModMessage(mainSiteFkey,
                            siteHostname,
                            userInfo.user_id,
                            templateName,
                            suspendReason,
-                           'So long, farewell, auf wiedersehen, adieu,  \n' +
-                           'Adieu, adieu, to yieu and yieu and yieu.',
+                           'Account removed for spamming and/or abusive behavior. You\'re no longer welcome to participate here.',
                            false,
                            365)
             .then(() =>
