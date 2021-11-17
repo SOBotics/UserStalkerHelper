@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "@types/greasemonkey": "^4.0.2",
+    "@types/tampermonkey": "^4.0.5",
+    "@userscripters/stackexchange-global-types": "^2.2.1"
+  }
+}

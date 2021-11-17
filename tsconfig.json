@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "checkJs": true,
+        "strict": true,
+        "noEmit": true,
+        "lib": ["DOM", "DOM.Iterable", "ESNext"],
+        "types": [
+            "tampermonkey",
+            "greasemonkey",
+            "@userscripters/stackexchange-global-types"
+        ]
+    },
+    "include": ["."]
+}
