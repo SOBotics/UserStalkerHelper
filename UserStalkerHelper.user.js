@@ -184,22 +184,25 @@
         throw new Error("chat fkey getter failed");
    }
 
-   function getChatMessage(fkeyChat, messageId)
-   {
-      return new Promise(function(resolve, reject)
-      {
-            $.get(`//${HOSTNAME_CHAT}/message/${messageId}`,
-                  {
-                     fkey : fkeyChat,
-                     plain: true,
-                  })
-                  .done((result) =>
-                  {
-                     resolve(result);
-                  })
-                  .fail(reject);
-      });
-   }
+    /**
+     * @param {string} fkeyChat chat fkey
+     * @param {number} messageId id of the chat message
+     */
+    async function getChatMessage(fkeyChat, messageId)
+    {
+        const params = new URLSearchParams({
+            fkey: fkeyChat,
+            plain: "true"
+        });
+
+        const url = new URL(`//${HOSTNAME_CHAT}/message/${messageId}`);
+        url.search = params.toString();
+
+        return GM_XML_HTTP_REQUEST({
+            method : "GET",
+            url    : url.toString()
+        });
+    }
 
    function editChatMessage(fkeyChat, messageId, messageText)
    {
