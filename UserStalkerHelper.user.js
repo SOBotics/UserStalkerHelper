@@ -29,7 +29,7 @@
    // Client ID is 21280 (https://stackapps.com/apps/oauth/view/21280)
    const SE_API_KEY          = 'F9msnTSnUmKMKD7BnjHAxA((';
    const GM_XML_HTTP_REQUEST = ((typeof GM !== 'undefined') ? GM.xmlHttpRequest.bind(GM)
-                                                            : GM_xmlHttpRequest);  /* eslint-disable-line no-undef */
+                                                            : GM_xmlhttpRequest);  /* eslint-disable-line no-undef */
    const HOSTNAME_CHAT       = window.location.hostname;
    const IS_TRANSCRIPT       = window.location.pathname.startsWith('/transcript');
    const IS_SEARCH           = window.location.pathname.startsWith('/search');
