@@ -255,26 +255,25 @@
       });
    }
 
-
-   function getMainSiteFkey(siteHostname)
+   /**
+    * @param {string} siteHostname name of the network site host
+    */
+   async function getMainSiteFkey(siteHostname)
    {
-      return new Promise(function(resolve, reject)
-      {
-         if (siteHostname == null)
-         {
-            reject();
-         }
 
-         GM_XML_HTTP_REQUEST(
-         {
+        if (siteHostname == null)
+        {
+           throw new Error("missing hostname");
+        }
+        
+        const result = await GM_XML_HTTP_REQUEST(
+        {
             method : 'GET',
-            url    : `//${siteHostname}/users/${CHAT.CURRENT_USER_ID}`,
-            onload : (result) => { resolve($(result.response).find('input[name="fkey"]')[0].value); },
-            onerror: reject,
-            onabort: reject,
-         });
-      });
-   }
+            url    : `//${siteHostname}/users/${CHAT.CURRENT_USER_ID}`
+        });
+
+        return $(result.response).find('input[name="fkey"]')[0].value;
+    }
 
 
    function getUserInfofromApi(siteHostname, userId)
