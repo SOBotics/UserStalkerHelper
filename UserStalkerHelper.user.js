@@ -310,45 +310,43 @@
       });
    }
 
-
-    function getUserPii(mainSiteFkey, siteHostname, userId)
+   /**
+    * @param {string} mainSiteFkey fkey from the site (differs from chat fkey)
+    * @param {string} siteHostname hostname of the network site
+    * @param {number} userId user id to get the PII for
+    */
+    async function getUserPii(mainSiteFkey, siteHostname, userId)
     {
-       return new Promise(function(resolve, reject)
-       {
-          if ((mainSiteFkey == null) ||
-              (siteHostname == null) ||
-              (userId       == null))
-          {
-             reject();
-          }
+        if ((mainSiteFkey == null) ||
+            (siteHostname == null) ||
+            (userId       == null))
+        {
+           throw new Error("missing PII getter parameter");
+        }
 
-          const data = new URLSearchParams(
-          {
-             'fkey': mainSiteFkey,
-             'id'  : userId,
-          });
-          GM_XML_HTTP_REQUEST(
-          {
-             method : 'POST',
-             url    : `//${siteHostname}/admin/all-pii`,
-             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-             data   : data.toString(),
-             onload : (result) =>
-                      {
-                         const html = $(result.responseText);
-                         const ip   = html.find('div:contains("IP Address:") + div > span.ip-address-lookup');
-                         resolve(
-                         {
-                            name  : html.find('div:contains("Real Name:") + div > a').text().trim(),
-                            email : html.find('div:contains("Email:") + div > a').text().trim(),
-                            ip    : ip.text().trim(),
-                            tor   : ip.data('tor').trim(),
-                         });
-                      },
-             onerror: reject,
-             onabort: reject,
-          });
-       });
+        const data = new URLSearchParams(
+        {
+           'fkey': mainSiteFkey,
+           'id'  : userId.toString(),
+        });
+
+        const result = await GM_XML_HTTP_REQUEST(
+        {
+           method : 'POST',
+           url    : `//${siteHostname}/admin/all-pii`,
+           headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+           data   : data.toString()
+        });
+
+        const html = $(result.responseText);
+        const ip   = html.find('div:contains("IP Address:") + div > span.ip-address-lookup');
+
+        return {
+           name  : html.find('div:contains("Real Name:") + div > a').text().trim(),
+           email : html.find('div:contains("Email:") + div > a').text().trim(),
+           ip    : ip.text().trim(),
+           tor   : ip.data('tor').trim(),
+        };
     }
 
    function sendModMessage(mainSiteFkey,
