@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      1.3.0
+// @version      1.3.1
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -203,7 +203,9 @@
          plain: 'true',
       });
 
-      const url   = new URL(`//${HOSTNAME_CHAT}/message/${messageId}`);
+      // NOTE: The URL constructor validates the protocol sub-string,
+      //       so "https:" cannot be omitted in favor of "//".
+      const url  = new URL(`https://${HOSTNAME_CHAT}/message/${messageId}`);
       url.search = params.toString();
 
       return GM_XML_HTTP_REQUEST(
@@ -251,14 +253,15 @@
          .then((fkeyChat) =>
          {
             getChatMessage(fkeyChat, messageId)
-            .then((messageText) =>
+            .then((message) =>
             {
-               if (messageText)
+               if (message?.response)
                {
-                  const prefix = messageText.match(/\[ \[.*\]\(.*\) \] /)[0];
+                  const full   = message.response;
+                  const prefix = full.match(/\[ \[.*\]\(.*\) \] /)[0];
                   if (prefix)
                   {
-                     const main = messageText.slice(prefix.length);
+                     const main = full.slice(prefix.length);
                      editChatMessage(fkeyChat,
                                      messageId,
                                      `${prefix}${STRIKEOUT_MARKDOWN}${main}${STRIKEOUT_MARKDOWN}`);
