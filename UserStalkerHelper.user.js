@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      1.3.2
+// @version      1.4.0
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -23,6 +23,10 @@
 
 (() =>
 {
+   /**********************************************
+    * Global Constants
+    **********************************************/
+
    'use strict';
 
    // Registered on Stack Apps in order to obtain an API key.
@@ -30,13 +34,12 @@
    const SE_API_KEY          = 'F9msnTSnUmKMKD7BnjHAxA((';
    const GM_XML_HTTP_REQUEST = ((typeof GM !== 'undefined') ? GM.xmlHttpRequest.bind(GM)
                                                             : GM_xmlhttpRequest);  /* eslint-disable-line no-undef */
-   const HOSTNAME_CHAT       = window.location.hostname;
    const IS_TRANSCRIPT       = window.location.pathname.startsWith('/transcript');
    const IS_SEARCH           = window.location.pathname.startsWith('/search');
    const BOT_ACCOUNT_ID      = {
                                   'chat.stackexchange.com': 530642,
                                   'chat.stackoverflow.com': 17363584,
-                               }[HOSTNAME_CHAT];
+                               }[window.location.hostname];
    const BOMB_EMOJI          = String.fromCodePoint(0x1F4A3);
    const BOMB_IMAGE_URL      = 'https://raw.githubusercontent.com/joypixels/emoji-assets/master/png/32/1f4a3.png';
    const DESTROY_OPTIONS     =
@@ -60,6 +63,10 @@
          suspendReason: 'for rule violations',
       },
    };
+
+   /**********************************************
+    * Initialization
+    **********************************************/
 
    // Attempt to restrict the running of this script to users with moderator privileges.
    // Unfortunately, there's no way to detect whether the current user is a moderator
@@ -90,6 +97,9 @@
    }
    )(window);
 
+   /**********************************************
+    * Chat Message Listeners & Decorators
+    **********************************************/
 
    function chatMessageListener({event_type, user_id, message_id})
    {
@@ -159,6 +169,9 @@
       }
    }
 
+   /**********************************************
+    * Chat Helper Functions
+    **********************************************/
 
    /**
     * Retrieves the fkey for the current (moderator) user's chat account on the current chat server.
@@ -175,7 +188,7 @@
       const result = await GM_XML_HTTP_REQUEST(
       {
          method : 'GET',
-         url    : `//${HOSTNAME_CHAT}`
+         url    : window.location.origin,
       });
 
       const fkeyInput = $(result.response).find('input#fkey');
@@ -203,9 +216,7 @@
          plain: 'true',
       });
 
-      // NOTE: The URL constructor validates the protocol sub-string,
-      //       so "https:" cannot be omitted in favor of "//".
-      const url  = new URL(`https://${HOSTNAME_CHAT}/message/${messageId}`);
+      const url  = new URL(`${window.location.origin}/message/${messageId}`);
       url.search = params.toString();
 
       const result = await GM_XML_HTTP_REQUEST(
@@ -235,7 +246,7 @@
          //       when hitting this API too soon after hitting the "/message/" (get) API.
          setTimeout(() =>
                     {
-                       $.post(`//${HOSTNAME_CHAT}/messages/${messageId}`,
+                       $.post(`${window.location.origin}/messages/${messageId}`,
                               {
                                 fkey: fkeyChat,
                                 text: messageText,
@@ -279,6 +290,33 @@
       });
    }
 
+   /**********************************************
+    * Main Site General Helper Functions
+    **********************************************/
+
+   /**
+    * Retrieves the "ticks" value from the specified site.
+    * @param {string} siteHostname  The full host name of a main site.
+    */
+   async function getTicks(siteHostname)
+   {
+      if (siteHostname == null)
+      {
+         throw new Error('The required "siteHostname" parameter is missing.');
+      }
+
+      const result = await GM_XML_HTTP_REQUEST(
+      {
+         method : 'GET',
+         url    : `//${siteHostname}/questions/ticks`,
+      });
+
+      if (!(result?.response))
+      {
+         throw new Error('Failed to retrieve \"ticks\" value.');
+      }
+      return result.response;
+   }
 
    /**
     * Retrieves the fkey for the current user's account on the specified site.
@@ -300,6 +338,9 @@
       return $(result.response).find('input[name="fkey"]')[0].value;
     }
 
+   /**********************************************
+    * SE API Helper Functions
+    **********************************************/
 
    /**
     * Retrieves information for the specified user account on the specified site.
@@ -340,6 +381,10 @@
       });
    }
 
+   /**********************************************
+    * Main Site User-Specific Helper Functions
+    **********************************************/
+
    /**
     * Retrieves PII for the specified user account on the specified site.
     * @param {string} mainSiteFkey  The fkey for the current (moderator) user on the main site.
@@ -375,6 +420,55 @@
                ip    : ip.text().trim(),
                tor   : ip.data('tor').trim(),
              };
+   }
+
+   /**
+    * Edits the profile for the specified user account on the specified site, removing all fields that might contain spam.
+    * @param {string} mainSiteFkey  The fkey for the current (moderator) user on the main site.
+    * @param {string} siteHostname  The full host name of a main site.
+    * @param {number} userId        The ID of the user account to edit.
+    */
+   async function bowdlerizeUserInfo(mainSiteFkey, siteHostname, userId)
+   {
+      if ((mainSiteFkey == null) ||
+          (siteHostname == null) ||
+          (userId       == null))
+      {
+         throw new Error('One or more required parameters is missing.');
+      }
+
+      // Get "ticks" value, which substitutes for the hidden "i1l" field on the
+      // user profile "edit" page, which cannot be retrieved programmatically.
+      const ticks = await getTicks(siteHostname);
+
+      // Submit the request to bowdlerize the information in the user profile.
+      const data = new URLSearchParams(
+      {
+         'fkey'           : mainSiteFkey,
+         'i1l'            : ticks,
+         'push'           : true,   // copy changes to all sites
+         'fields'         : '',
+         'author'         : '',
+         'DisplayName'    : 'Spammer',
+         'Location'       : '',
+         'LocationPlaceId': '',
+         'Title'          : '',
+         'AboutMe'        : '',
+         'WebsiteUrl'     : '',
+         'TwitterUrl'     : '',
+         'GitHubUrl'      : '',
+         'ProfileImageUrl': '',
+         'RealName'       : '',
+      });
+      const result = await GM_XML_HTTP_REQUEST(
+      {
+         method : 'POST',
+         url    : `//${siteHostname}/users/edit/${userId}/post`,
+         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+         data   : data.toString()
+      });
+      console.log(result);
+      return result;
    }
 
    function sendModMessage(mainSiteFkey,
@@ -450,7 +544,8 @@
    function destroyUser(mainSiteFkey,
                         siteHostname,
                         userInfo,
-                        destroyDetails = null)
+                        bowdlerizeFirst = false,
+                        destroyDetails  = null)
    {
       return new Promise(function(resolve, reject)
       {
@@ -485,35 +580,41 @@
          getUserPii(mainSiteFkey, siteHostname, userInfo.user_id)
          .then((pii) =>
          {
-            const details = destroyDetails.trim()
-                            + '\n'
-                            + `\nReal Name:        ${pii.name}`
-                            + `\nEmail Address:    ${pii.email}`
-                            + `\nIP Address:       ${pii.ip} (tor: ${pii.tor})`
-                            + `\nCreation Date:    ${userInfo.creation_date}`
-                            + `\nProfile Location: ${userInfo.location}`
-                            + `\nWebsite URL:      ${userInfo.website_url}`
-                            + `\nAvatar Image:     ${userInfo.profile_image}`
-                            ;
-            const data = new URLSearchParams(
+            (bowdlerizeFirst ? bowdlerizeUserInfo(mainSiteFkey, siteHostname, userInfo.user_id)
+                             : Promise.resolve())
+            .then(() =>
             {
-               'fkey'                : mainSiteFkey,
-               'annotation'          : '',
-               'deleteReasonDetails' : '',
-               'mod-actions'         : 'destroy',
-               'destroyReason'       : 'This user was created to post spam or nonsense and has no other positive participation',
-               'destroyReasonDetails': details,
-            });
-            GM_XML_HTTP_REQUEST(
-            {
-               method : 'POST',
-               url    : `//${siteHostname}/admin/users/${userInfo.user_id}/destroy`,
-               headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-               data   : data.toString(),
-               onload : resolve,
-               onerror: reject,
-               onabort: reject,
-            });
+               const details = destroyDetails.trim()
+                               + '\n'
+                               + `\nReal Name:        ${pii.name}`
+                               + `\nEmail Address:    ${pii.email}`
+                               + `\nIP Address:       ${pii.ip} (tor: ${pii.tor})`
+                               + `\nCreation Date:    ${userInfo.creation_date}`
+                               + `\nProfile Location: ${userInfo.location}`
+                               + `\nWebsite URL:      ${userInfo.website_url}`
+                               + `\nAvatar Image:     ${userInfo.profile_image}`
+                               ;
+               const data = new URLSearchParams(
+               {
+                  'fkey'                : mainSiteFkey,
+                  'annotation'          : '',
+                  'deleteReasonDetails' : '',
+                  'mod-actions'         : 'destroy',
+                  'destroyReason'       : 'This user was created to post spam or nonsense and has no other positive participation',
+                  'destroyReasonDetails': details,
+               });
+               GM_XML_HTTP_REQUEST(
+               {
+                  method : 'POST',
+                  url    : `//${siteHostname}/admin/users/${userInfo.user_id}/destroy`,
+                  headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                  data   : data.toString(),
+                  onload : resolve,
+                  onerror: reject,
+                  onabort: reject,
+               });
+            })
+            .catch(reject);
          })
          .catch(reject);
       });
@@ -522,49 +623,47 @@
    function nukeUser(mainSiteFkey,
                      siteHostname,
                      userInfo,
+                     bowdlerizeFirst,
                      destroyDetails = null,
                      templateName   = null,
                      suspendReason  = null)
    {
-      if ((templateName == null) && (suspendReason == null))
+      return new Promise(function(resolve, reject)
       {
-         return destroyUser(mainSiteFkey, siteHostname, userInfo, destroyDetails);
-      }
-      else
-      {
-         return new Promise(function(resolve, reject)
+         // If requested, apply the maximum suspension period (1 year) before destroying the account,
+         // skipping the sending of an email to the user's registered email address. Although most
+         // users won't see this message (since it'll only be displayed on the site, and we're about
+         // to destroy their account), it is possible they see it upon re-creation of the account.
+         // In that case, they can only see the  first few words of the message in the global inbox
+         // (the system will notify them of a new message, though); they *cannot* click on the inbox
+         // item to view the full message. Therefore, we must keep it *very* short, if they are to
+         // be able to see anything. It's difficult to give much guidance, but this is a pretty good
+         // compromise. It is all that will fit in the preview, down to the *letter* (i.e., it is
+         // essential to use the contraction "you're"; "you are" makes the message too long)!
+         // See also: https://chat.stackexchange.com/transcript/message/59625219#59625219
+         const suspendFirst = !((templateName == null) && (suspendReason == null));
+         (suspendFirst ? sendModMessage(mainSiteFkey,
+                                        siteHostname,
+                                        userInfo.user_id,
+                                        templateName,
+                                        suspendReason,
+                                        'Account removed for spamming and/or abusive behavior. You\'re no longer welcome to participate here.',
+                                        false,
+                                        365)
+                       : Promise.resolve())
+         .then(() =>
          {
-            // Apply the maximum suspension period (1 year) before destroying the account,
-            // skipping the sending of an email to the user's registered email address.
-            // Although most users won't see this message (since it'll only be displayed on
-            // the site, and we're about to destroy their account), it is possible that they
-            // see it upon re-creation of the account. In that case, they can only see the
-            // first few words of the message in the global inbox (it will notify them of a
-            // new message, though); they *cannot* click on the inbox item to view the full
-            // message. Therefore, we must keep it *very* short, if they are to be able to
-            // see anything. It's difficult to give much guidance, but this is a pretty good
-            // compromise. It is all that will fit in the preview, down to the *letter*.
-            // The contraction "you're" must be used; "you are" is too long!
-            // See also: https://chat.stackexchange.com/transcript/message/59625219#59625219
-            sendModMessage(mainSiteFkey,
-                           siteHostname,
-                           userInfo.user_id,
-                           templateName,
-                           suspendReason,
-                           'Account removed for spamming and/or abusive behavior. You\'re no longer welcome to participate here.',
-                           false,
-                           365)
-            .then(() =>
-            {
-               destroyUser(mainSiteFkey, siteHostname, userInfo, destroyDetails)
-               .then(resolve)
-               .catch(reject);
-            })
+            destroyUser(mainSiteFkey, siteHostname, userInfo, bowdlerizeFirst, destroyDetails)
+            .then(resolve)
             .catch(reject);
-         });
-      }
+         })
+         .catch(reject);
+      });
    }
 
+   /**********************************************
+    * Userscript UI & Handlers
+    **********************************************/
 
    function createDestroyOptions()
    {
@@ -645,11 +744,27 @@
                                + 'included in the record.';
       content.append(instructions);
 
-      const checkbox = document.createElement('div');
-      checkbox.classList.add('swal-content');
-      checkbox.innerHTML = '<input type="checkbox" name="userstalker-suspend-toggle" id="userstalker-suspend-toggle" checked />' +
-                           '<label for="userstalker-suspend-toggle">Suspend for maximum duration of 1 year before destroying</label>';
-      content.append(checkbox);
+      const checkboxes = document.createElement('div');
+      checkboxes.classList.add('swal-content');
+      checkboxes.innerHTML = '<table>' +
+                               '<tr>' +
+                                 '<td>' +
+                                   '<label title="Enabling this option will automatically send a message that suspends the user for the maximum duration that is permitted for moderators (365 days) before destroying the account. This ensures that, even if the destroyed account is re-created at any time within the next year, it will be automatically suspended by the system, thus restricting the account\'s ability to post anything.">' +
+                                     '<input type="checkbox" name="userstalker-suspend-toggle" id="userstalker-suspend-toggle" checked />' +
+                                     'Suspend for maximum duration of 1 year before destroying' +
+                                   '</label>' +
+                                 '</td>' +
+                               '</tr>' +
+                               '<tr>' +
+                                 '<td>' +
+                                   '<label title="Enabling this option will clear all fields in the user\'s profile to remove spam content and set the display name to &quot;Spammer&quot; before destroying the account. (The original info is still retrieved and recorded in the deleted user record.)">' +
+                                     '<input type="checkbox" name="userstalker-bowdlerize-toggle" id="userstalker-bowdlerize-toggle" />' +
+                                     'Bowdlerize profile and push edits to all sites before destroying' +
+                                   '</label>' +
+                                 '</td>' +
+                               '</tr>' +
+                             '</table>';
+      content.append(checkboxes);
 
       return content;
    }
@@ -709,6 +824,7 @@
                const stalkerDetails  = `User Stalker found: ${detectionReasons}`;
                const fullDetails     = `${selectedDetails ? selectedDetails + '\n\n' : ''}${stalkerDetails}`;
                const suspendFirst    = document.querySelector('.swal-content input#userstalker-suspend-toggle').checked;
+               const bowdlerizeFirst = document.querySelector('.swal-content input#userstalker-bowdlerize-toggle').checked;
                const templateName    = (suspendFirst ? DESTROY_OPTIONS[selectedReason].templateName  : null);
                const suspendReason   = (suspendFirst ? DESTROY_OPTIONS[selectedReason].suspendReason : null);
                getMainSiteFkey(siteHostname)
@@ -717,6 +833,7 @@
                   nukeUser(mainSiteFkey,
                            siteHostname,
                            userInfo,
+                           bowdlerizeFirst,
                            fullDetails,
                            templateName,
                            suspendReason)
@@ -802,6 +919,17 @@ img.userstalker-nuke-button:active
    padding: 14px;
    font: inherit;
    will-change: unset;
+}
+.swal-modal
+{
+   width: 700px;
+}
+@media only screen and (max-width: 750px)
+{
+   .swal-modal
+   {
+      width: 495px;
+   }
 }
 .swal-title:first-child,
 .swal-title:not(:last-child)
