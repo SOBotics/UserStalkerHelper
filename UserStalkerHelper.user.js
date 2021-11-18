@@ -780,12 +780,6 @@
 
       const siteHostname     = new URL(userUrl).hostname;
 
-
-      getMainSiteFkey(siteHostname)
-               .then((mainSiteFkey) =>
-                     { console.log(mainSiteFkey); });
-      return;
-
       getUserInfofromApi(siteHostname, userId).then((userInfo) =>
       {
          swal(
