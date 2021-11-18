@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      2.0.0
+// @version      2.0.1
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -744,17 +744,17 @@
       checkboxes.innerHTML = '<table>' +
                                '<tr>' +
                                  '<td>' +
-                                   '<label title="Enabling this option will automatically send a message that suspends the user for the maximum duration that is permitted for moderators (365 days) before destroying the account. This ensures that, even if the destroyed account is re-created at any time within the next year, it will be automatically suspended by the system, thus restricting the account\'s ability to post anything.">' +
-                                     '<input type="checkbox" name="userstalker-suspend-toggle" id="userstalker-suspend-toggle" checked />' +
-                                     'Suspend for maximum duration of 1 year before destroying' +
+                                   '<label title="Enabling this option will clear all fields in the user\'s profile to remove spam content and set the display name to &quot;Spammer&quot; before destroying the account. (The original info is still retrieved and recorded in the deleted user record.)">' +
+                                     '<input type="checkbox" name="userstalker-bowdlerize-toggle" id="userstalker-bowdlerize-toggle" checked />' +
+                                     'Bowdlerize profile and push edits to all sites before destroying' +
                                    '</label>' +
                                  '</td>' +
                                '</tr>' +
                                '<tr>' +
                                  '<td>' +
-                                   '<label title="Enabling this option will clear all fields in the user\'s profile to remove spam content and set the display name to &quot;Spammer&quot; before destroying the account. (The original info is still retrieved and recorded in the deleted user record.)">' +
-                                     '<input type="checkbox" name="userstalker-bowdlerize-toggle" id="userstalker-bowdlerize-toggle" checked />' +
-                                     'Bowdlerize profile and push edits to all sites before destroying' +
+                                   '<label title="Enabling this option will automatically send a message that suspends the user for the maximum duration that is permitted for moderators (365 days) before destroying the account. This ensures that, even if the destroyed account is re-created at any time within the next year, it will be automatically suspended by the system, thus restricting the account\'s ability to post anything.">' +
+                                     '<input type="checkbox" name="userstalker-suspend-toggle" id="userstalker-suspend-toggle" />' +
+                                     'Suspend for maximum duration of 1 year before destroying' +
                                    '</label>' +
                                  '</td>' +
                                '</tr>' +
@@ -818,8 +818,8 @@
                                        ).trim();
                const stalkerDetails  = `User Stalker found: ${detectionReasons}`;
                const fullDetails     = `${selectedDetails ? selectedDetails + '\n\n' : ''}${stalkerDetails}`;
-               const suspendFirst    = document.querySelector('.swal-content input#userstalker-suspend-toggle').checked;
                const bowdlerizeFirst = document.querySelector('.swal-content input#userstalker-bowdlerize-toggle').checked;
+               const suspendFirst    = document.querySelector('.swal-content input#userstalker-suspend-toggle').checked;
                const templateName    = (suspendFirst ? DESTROY_OPTIONS[selectedReason].templateName  : null);
                const suspendReason   = (suspendFirst ? DESTROY_OPTIONS[selectedReason].suspendReason : null);
                getMainSiteFkey(siteHostname)
