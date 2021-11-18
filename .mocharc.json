@@ -1,0 +1,16 @@
+{
+    "$schema": "https://json.schemastore.org/mocharc.json",
+    "extensions": [
+        "ts"
+    ],
+    "loader": [
+        "ts-node/esm"
+    ],
+    "recursive": true,
+    "require": [
+        "ts-node/register"
+    ],
+    "spec": [
+        "test/**/*.spec.*"
+    ]
+}

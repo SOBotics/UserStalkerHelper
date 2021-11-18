@@ -1,0 +1,12 @@
+{
+    // "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "types": ["mocha", "chai", "node"],
+        "module": "esnext",
+        "target": "esnext",
+        "esModuleInterop": true,
+        "moduleResolution": "node"
+    },
+    "include": ["."],
+    "exclude": []
+}
