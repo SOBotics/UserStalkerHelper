@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      1.2.0
+// @version      1.3.0
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -160,50 +160,65 @@
    }
 
 
+   /**
+    * Retrieves the fkey for the current (moderator) user's chat account on the current chat server.
+    */
    async function getChatFkey()
    {
-        if (fkey?.fkey)
-        {
-            return fkey.fkey();
-        }
+      if (fkey?.fkey)
+      {
+         return fkey.fkey();
+      }
 
-        // The "search" page does not define the user's chat FKEY anywhere,
-        // so we need to fetch it from a page that does.
-        const result = await GM_XML_HTTP_REQUEST(
-        {
-           method : 'GET',
-           url    : `//${HOSTNAME_CHAT}`
-        });
+      // The "search" page does not define the user's chat FKEY anywhere,
+      // so we need to fetch it from a page that does.
+      const result = await GM_XML_HTTP_REQUEST(
+      {
+         method : 'GET',
+         url    : `//${HOSTNAME_CHAT}`
+      });
 
-        const fkeyInput = $(result.response).find('input#fkey');
-        if (fkeyInput.length) {
-             return fkeyInput.val();
-        }
+      const fkeyInput = $(result.response).find('input#fkey');
+      if (fkeyInput.length)
+      {
+         return fkeyInput.val();
+      }
 
-        alert('Failed to get your chat account\'s FKEY.');
-        throw new Error("chat fkey getter failed");
+      // TODO: Remove alert from this and other helper functions;
+      //       centralize error reporting in one place.
+      alert('Failed to get your chat account\'s FKEY.');
+      throw new Error('Failed to get your chat account\'s FKEY.');
    }
 
-    /**
-     * @param {string} fkeyChat chat fkey
-     * @param {number} messageId id of the chat message
-     */
-    async function getChatMessage(fkeyChat, messageId)
-    {
-        const params = new URLSearchParams({
-            fkey: fkeyChat,
-            plain: "true"
-        });
+   /**
+    * Retrieves the contents of a chat message on the current chat server.
+    * @param {string} fkeyChat   The fkey for the current (moderator) user on the chat server.
+    * @param {number} messageId  The ID of the chat message to retrieve.
+    */
+   async function getChatMessage(fkeyChat, messageId)
+   {
+      const params = new URLSearchParams(
+      {
+         fkey : fkeyChat,
+         plain: 'true',
+      });
 
-        const url = new URL(`//${HOSTNAME_CHAT}/message/${messageId}`);
-        url.search = params.toString();
+      const url   = new URL(`//${HOSTNAME_CHAT}/message/${messageId}`);
+      url.search = params.toString();
 
-        return GM_XML_HTTP_REQUEST({
-            method : "GET",
-            url    : url.toString()
-        });
-    }
+      return GM_XML_HTTP_REQUEST(
+      {
+         method : "GET",
+         url    : url.toString()
+      });
+   }
 
+   /**
+    * Edits the contents of a chat message on the current chat server.
+    * @param {string} fkeyChat     The fkey for the current (moderator) user on the chat server.
+    * @param {number} messageId    The ID of the chat message to edit.
+    * @param {string} messageText  The new contents of the chat message.
+    */
    function editChatMessage(fkeyChat, messageId, messageText)
    {
       return new Promise(function(resolve, reject)
@@ -223,6 +238,10 @@
       });
    }
 
+   /**
+    * Edits a chat message from the User Stalker bot  on the current chat server to add strike-through formatting in the appropriate place.
+    * @param {number} messageId  The ID of the chat message to edit.
+    */
    function strikeoutChatMessage(messageId)
    {
       const STRIKEOUT_MARKDOWN = '---';
@@ -255,27 +274,33 @@
       });
    }
 
+
    /**
-    * @param {string} siteHostname name of the network site host
+    * Retrieves the fkey for the current user's account on the specified site.
+    * @param {string} siteHostname  The full host name of a main site.
     */
    async function getMainSiteFkey(siteHostname)
    {
+      if (siteHostname == null)
+      {
+         throw new Error('The required "siteHostname" parameter is missing.');
+      }
 
-        if (siteHostname == null)
-        {
-           throw new Error("missing hostname");
-        }
-        
-        const result = await GM_XML_HTTP_REQUEST(
-        {
-            method : 'GET',
-            url    : `//${siteHostname}/users/${CHAT.CURRENT_USER_ID}`
-        });
+      const result = await GM_XML_HTTP_REQUEST(
+      {
+         method : 'GET',
+         url    : `//${siteHostname}/users/${CHAT.CURRENT_USER_ID}`
+      });
 
-        return $(result.response).find('input[name="fkey"]')[0].value;
+      return $(result.response).find('input[name="fkey"]')[0].value;
     }
 
 
+   /**
+    * Retrieves information for the specified user account on the specified site.
+    * @param {string} siteHostname  The full host name of a main site.
+    * @param {number} userId        The ID of the user account to retrieve information about.
+    */
    function getUserInfofromApi(siteHostname, userId)
    {
       return new Promise(function(resolve, reject)
@@ -311,43 +336,42 @@
    }
 
    /**
-    * @param {string} mainSiteFkey fkey from the site (differs from chat fkey)
-    * @param {string} siteHostname hostname of the network site
-    * @param {number} userId user id to get the PII for
+    * Retrieves PII for the specified user account on the specified site.
+    * @param {string} mainSiteFkey  The fkey for the current (moderator) user on the main site.
+    * @param {string} siteHostname  The full host name of a main site.
+    * @param {number} userId        The ID of the user account to retrieve information about.
     */
-    async function getUserPii(mainSiteFkey, siteHostname, userId)
-    {
-        if ((mainSiteFkey == null) ||
-            (siteHostname == null) ||
-            (userId       == null))
-        {
-           throw new Error("missing PII getter parameter");
-        }
+   async function getUserPii(mainSiteFkey, siteHostname, userId)
+   {
+      if ((mainSiteFkey == null) ||
+          (siteHostname == null) ||
+          (userId       == null))
+      {
+         throw new Error('One or more required parameters is missing.');
+      }
 
-        const data = new URLSearchParams(
-        {
-           'fkey': mainSiteFkey,
-           'id'  : userId.toString(),
-        });
+      const data = new URLSearchParams(
+      {
+         'fkey': mainSiteFkey,
+         'id'  : userId.toString(),
+      });
+      const result = await GM_XML_HTTP_REQUEST(
+      {
+         method : 'POST',
+         url    : `//${siteHostname}/admin/all-pii`,
+         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+         data   : data.toString()
+      });
 
-        const result = await GM_XML_HTTP_REQUEST(
-        {
-           method : 'POST',
-           url    : `//${siteHostname}/admin/all-pii`,
-           headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-           data   : data.toString()
-        });
-
-        const html = $(result.responseText);
-        const ip   = html.find('div:contains("IP Address:") + div > span.ip-address-lookup');
-
-        return {
-           name  : html.find('div:contains("Real Name:") + div > a').text().trim(),
-           email : html.find('div:contains("Email:") + div > a').text().trim(),
-           ip    : ip.text().trim(),
-           tor   : ip.data('tor').trim(),
-        };
-    }
+      const html = $(result.responseText);
+      const ip   = html.find('div:contains("IP Address:") + div > span.ip-address-lookup');
+      return {
+         name  : html.find('div:contains("Real Name:") + div > a').text().trim(),
+         email : html.find('div:contains("Email:") + div > a').text().trim(),
+         ip    : ip.text().trim(),
+         tor   : ip.data('tor').trim(),
+      };
+   }
 
    function sendModMessage(mainSiteFkey,
                            siteHostname,
@@ -701,7 +725,7 @@
                         swal.stopLoading();
                         swal.close();
 
-                        // Transcript and search pages do not auto-update when a message is edited,
+                        // The transcript and search pages do not auto-update when a message is edited,
                         // so force a refresh at this point.
                         if (IS_TRANSCRIPT || IS_SEARCH)
                         {
