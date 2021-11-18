@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      1.4.0
+// @version      2.0.0
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -208,7 +208,7 @@
     * @param {string} fkeyChat   The fkey for the current (moderator) user on the chat server.
     * @param {number} messageId  The ID of the chat message to retrieve.
     */
-   async function getChatMessage(fkeyChat, messageId)
+   async function getChatMessageText(fkeyChat, messageId)
    {
       const params = new URLSearchParams(
       {
@@ -221,7 +221,7 @@
 
       const result = await GM_XML_HTTP_REQUEST(
       {
-         method : "GET",
+         method : 'GET',
          url    : url.toString()
       });
 
@@ -238,56 +238,39 @@
     * @param {number} messageId    The ID of the chat message to edit.
     * @param {string} messageText  The new contents of the chat message.
     */
-   function editChatMessage(fkeyChat, messageId, messageText)
+   async function editChatMessage(fkeyChat, messageId, messageText)
    {
       return new Promise(function(resolve, reject)
       {
-         // NOTE: A 1-second delay was added to prevent intermittent 409 (conflict) errors
-         //       when hitting this API too soon after hitting the "/message/" (get) API.
-         setTimeout(() =>
-                    {
-                       $.post(`${window.location.origin}/messages/${messageId}`,
-                              {
-                                fkey: fkeyChat,
-                                text: messageText,
-                              })
-                              .done(resolve)
-                              .fail(reject);
-                    }, 1000);
+         $.post(`${window.location.origin}/messages/${messageId}`,
+                {
+                  fkey: fkeyChat,
+                  text: messageText,
+                })
+                .done(resolve)
+                .fail(reject);
       });
    }
 
    /**
-    * Edits a chat message from the User Stalker bot  on the current chat server to add strike-through formatting in the appropriate place.
+    * Edits a chat message from the User Stalker bot on the current chat server to add strike-through formatting in the appropriate place.
     * @param {number} messageId  The ID of the chat message to edit.
     */
-   function strikeoutChatMessage(messageId)
+   async function strikeoutChatMessage(messageId)
    {
       const STRIKEOUT_MARKDOWN = '---';
-      return new Promise(function(resolve, reject)
-      {
-         getChatFkey()
-         .then((fkeyChat) =>
-         {
-            getChatMessage(fkeyChat, messageId)
-            .then((messageText) =>
-            {
-               const prefix = messageText.match(/\[ \[.*\]\(.*\) \] /)[0];
-               if (prefix)
-               {
-                  const contents = messageText.slice(prefix.length);
-                  editChatMessage(fkeyChat,
-                                  messageId,
-                                  `${prefix}${STRIKEOUT_MARKDOWN}${contents}${STRIKEOUT_MARKDOWN}`);
-                  resolve();
-               }
 
-               reject();
-            })
-            .catch(reject);
-            })
-         .catch(reject);
-      });
+      const fkeyChat      = await getChatFkey();
+      const messageText   = await getChatMessageText(fkeyChat, messageId);
+      const messagePrefix = messageText.match(/\[ \[.*\]\(.*\) \] /)[0];
+      if (!messagePrefix)
+      {
+         throw new Error('Failed to find expected pattern in chat message from User Stalker bot.');
+      }
+      const messageContents = messageText.slice(messagePrefix.length);
+      return editChatMessage(fkeyChat,
+                             messageId,
+                             `${messagePrefix}${STRIKEOUT_MARKDOWN}${messageContents}${STRIKEOUT_MARKDOWN}`);
    }
 
    /**********************************************
@@ -313,7 +296,7 @@
 
       if (!(result?.response))
       {
-         throw new Error('Failed to retrieve \"ticks\" value.');
+         throw new Error('Failed to retrieve "ticks" value.');
       }
       return result.response;
    }
@@ -332,10 +315,15 @@
       const result = await GM_XML_HTTP_REQUEST(
       {
          method : 'GET',
-         url    : `//${siteHostname}/users/${CHAT.CURRENT_USER_ID}`
+         url    : `//${siteHostname}`
       });
 
-      return $(result.response).find('input[name="fkey"]')[0].value;
+      const fkeyInput = $(result.response).find('input[name="fkey"]');
+      if (!fkeyInput)
+      {
+         throw new Error('Failed to retrieve "fkey" value for main site.');
+      }
+      return fkeyInput.val();
     }
 
    /**********************************************
@@ -441,34 +429,41 @@
       // user profile "edit" page, which cannot be retrieved programmatically.
       const ticks = await getTicks(siteHostname);
 
+      // A delay of at least 2 seconds is required between fetching the "ticks"
+      // value and submitting the edit to the profile. This is an old bug that
+      // manifests not only programmatically, but also when attempting to edit
+      // the profile using the web interface. Apparently, this throttle is a
+      // "security" measure. See: https://meta.stackexchange.com/q/223761 and
+      // https://meta.stackexchange.com/q/183508, with answers by (former)
+      // SE developers.
+      await new Promise((result) => setTimeout(result, 2000));
+
       // Submit the request to bowdlerize the information in the user profile.
       const data = new URLSearchParams(
       {
          'fkey'           : mainSiteFkey,
          'i1l'            : ticks,
-         'push'           : true,   // copy changes to all sites
          'fields'         : '',
          'author'         : '',
+         'push'           : true,       // copy changes to all sites
          'DisplayName'    : 'Spammer',
+       //'RealName'       : '',         // do not reset this field
+         'ProfileImageUrl': '',
          'Location'       : '',
          'LocationPlaceId': '',
          'Title'          : '',
-         'AboutMe'        : '',
          'WebsiteUrl'     : '',
          'TwitterUrl'     : '',
          'GitHubUrl'      : '',
-         'ProfileImageUrl': '',
-         'RealName'       : '',
+         'AboutMe'        : '',
       });
-      const result = await GM_XML_HTTP_REQUEST(
+      return GM_XML_HTTP_REQUEST(
       {
          method : 'POST',
          url    : `//${siteHostname}/users/edit/${userId}/post`,
          headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
          data   : data.toString()
       });
-      console.log(result);
-      return result;
    }
 
    function sendModMessage(mainSiteFkey,
@@ -758,7 +753,7 @@
                                '<tr>' +
                                  '<td>' +
                                    '<label title="Enabling this option will clear all fields in the user\'s profile to remove spam content and set the display name to &quot;Spammer&quot; before destroying the account. (The original info is still retrieved and recorded in the deleted user record.)">' +
-                                     '<input type="checkbox" name="userstalker-bowdlerize-toggle" id="userstalker-bowdlerize-toggle" />' +
+                                     '<input type="checkbox" name="userstalker-bowdlerize-toggle" id="userstalker-bowdlerize-toggle" checked />' +
                                      'Bowdlerize profile and push edits to all sites before destroying' +
                                    '</label>' +
                                  '</td>' +
@@ -785,16 +780,22 @@
 
       const siteHostname     = new URL(userUrl).hostname;
 
+
+      getMainSiteFkey(siteHostname)
+               .then((mainSiteFkey) =>
+                     { console.log(mainSiteFkey); });
+      return;
+
       getUserInfofromApi(siteHostname, userId).then((userInfo) =>
       {
          swal(
          {
-           title  : 'Destroy the user "' + userInfo.display_name + '\" because\u2026',
+           title  : 'Destroy the user "' + userInfo.display_name + '" because\u2026',
            buttons:
            {
               confirm:
               {
-                 text      : 'Destroy "' + userInfo.display_name + '\"',
+                 text      : 'Destroy "' + userInfo.display_name + '"',
                  value     : true,
                  visible   : true,
                  closeModal: false,
