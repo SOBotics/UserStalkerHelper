@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      1.3.1
+// @version      1.3.2
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -208,11 +208,17 @@
       const url  = new URL(`https://${HOSTNAME_CHAT}/message/${messageId}`);
       url.search = params.toString();
 
-      return GM_XML_HTTP_REQUEST(
+      const result = await GM_XML_HTTP_REQUEST(
       {
          method : "GET",
          url    : url.toString()
       });
+
+      if (!(result?.response))
+      {
+         throw new Error('Failed to get the text of the specified chat message.');
+      }
+      return result.response;
    }
 
    /**
@@ -253,20 +259,16 @@
          .then((fkeyChat) =>
          {
             getChatMessage(fkeyChat, messageId)
-            .then((message) =>
+            .then((messageText) =>
             {
-               if (message?.response)
+               const prefix = messageText.match(/\[ \[.*\]\(.*\) \] /)[0];
+               if (prefix)
                {
-                  const full   = message.response;
-                  const prefix = full.match(/\[ \[.*\]\(.*\) \] /)[0];
-                  if (prefix)
-                  {
-                     const main = full.slice(prefix.length);
-                     editChatMessage(fkeyChat,
-                                     messageId,
-                                     `${prefix}${STRIKEOUT_MARKDOWN}${main}${STRIKEOUT_MARKDOWN}`);
-                     resolve();
-                  }
+                  const contents = messageText.slice(prefix.length);
+                  editChatMessage(fkeyChat,
+                                  messageId,
+                                  `${prefix}${STRIKEOUT_MARKDOWN}${contents}${STRIKEOUT_MARKDOWN}`);
+                  resolve();
                }
 
                reject();
@@ -368,12 +370,11 @@
 
       const html = $(result.responseText);
       const ip   = html.find('div:contains("IP Address:") + div > span.ip-address-lookup');
-      return {
-         name  : html.find('div:contains("Real Name:") + div > a').text().trim(),
-         email : html.find('div:contains("Email:") + div > a').text().trim(),
-         ip    : ip.text().trim(),
-         tor   : ip.data('tor').trim(),
-      };
+      return { name  : html.find('div:contains("Real Name:") + div > a').text().trim(),
+               email : html.find('div:contains("Email:") + div > a').text().trim(),
+               ip    : ip.text().trim(),
+               tor   : ip.data('tor').trim(),
+             };
    }
 
    function sendModMessage(mainSiteFkey,
