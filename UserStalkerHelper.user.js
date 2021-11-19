@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      2.0.1
+// @version      2.1.0
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -716,6 +716,9 @@
                      row.querySelector('input').checked = true;
                   }
                }
+
+               document.querySelector('.swal-content input#userstalker-bowdlerize-toggle').checked = (destroyOption === 'spammer');
+               document.querySelector('.swal-content input#userstalker-suspend-toggle')   .checked = (destroyOption !== 'spammer');
             });
          }
       }
@@ -819,7 +822,7 @@
                const stalkerDetails  = `User Stalker found: ${detectionReasons}`;
                const fullDetails     = `${selectedDetails ? selectedDetails + '\n\n' : ''}${stalkerDetails}`;
                const bowdlerizeFirst = document.querySelector('.swal-content input#userstalker-bowdlerize-toggle').checked;
-               const suspendFirst    = document.querySelector('.swal-content input#userstalker-suspend-toggle').checked;
+               const suspendFirst    = document.querySelector('.swal-content input#userstalker-suspend-toggle')   .checked;
                const templateName    = (suspendFirst ? DESTROY_OPTIONS[selectedReason].templateName  : null);
                const suspendReason   = (suspendFirst ? DESTROY_OPTIONS[selectedReason].suspendReason : null);
                getMainSiteFkey(siteHostname)
