@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      2.1.0
+// @version      3.0.0
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -42,6 +42,8 @@
                                }[window.location.hostname];
    const BOMB_EMOJI          = String.fromCodePoint(0x1F4A3);
    const BOMB_IMAGE_URL      = 'https://raw.githubusercontent.com/joypixels/emoji-assets/master/png/32/1f4a3.png';
+   const CHECK_EMOJI         = String.fromCodePoint(0x2714);
+   const CHECK_IMAGE_URL     = 'https://raw.githubusercontent.com/joypixels/emoji-assets/master/png/32/2714.png';
    const DESTROY_OPTIONS     =
    {
       spammer:
@@ -87,6 +89,7 @@
       $('#getmore, #getmore-mine').click(() => decorateExistingMessages(500));
 
       $('body').on('click', 'img.userstalker-nuke-button', onClickNukeButton);
+      $('body').on('click', 'span.userstalker-check-button', onClickCheckButton);
 
       decorateExistingMessages(0);
 
@@ -140,27 +143,42 @@
       {
          // Match only <a>s that are direct descendants of .content in order to
          // exclude those <a>s that are wrapped within a <strike>.
-         const userLink = $message.find('.content > a + a[href*="/users/"]:not([href*="github.com"])');
+         const userLink = $message.find('.content > a + a[href*="/users/"]');
          if (userLink.length > 0)
          {
-            const userUrl = userLink.attr('href');
-            userLink.before('&nbsp;'
-                            + '<img class="userstalker-nuke-button"'
-                            + ` src="${BOMB_IMAGE_URL}"`
-                            + ` alt="${BOMB_EMOJI}"`
-                            + ' title="destroy this user account"'
-                            + ' width="32" height="32"'
-                            + ` data-messageid="${messageId}"`
-                            + ` data-userurl="${userUrl}"`
-                            + '>'
-                            + '&nbsp;');
+            const userUrl     = userLink.attr('href');
+            const content     = userLink.parent();
+            const contentHtml = content.html();
+            const pattern     = /(User Stalker<\/a> \] (?!✔ )?)(✔ )?(?!<strike>)/;
+            content.html(contentHtml.replace(pattern,
+                                             function($0, $1, $2)
+                                             {
+                                                return $1
+                                                     + '&nbsp;'
+                                                     + '<img class="userstalker-nuke-button"'
+                                                     + ` src="${BOMB_IMAGE_URL}"`
+                                                     + ` alt="${BOMB_EMOJI}"`
+                                                     + ' title="destroy this user account"'
+                                                     + ' width="32" height="32"'
+                                                     + ` data-messageid="${messageId}"`
+                                                     + ` data-userurl="${userUrl}"`
+                                                     + '>'
+                                                     + '&nbsp;'
+                                                     + ($2 ?? '<span class="userstalker-check-button"'
+                                                     +        ' title="mark this user account as appearing to be legitimate"'
+                                                     +        ` data-messageid="${messageId}"`
+                                                     +        ` data-userurl="${userUrl}"`
+                                                     +        `>${CHECK_EMOJI}</span>`
+                                                     +        '&nbsp;')
+                                                     + '&nbsp;';
+                                             }));
 
             // The transcript and search pages don't open links in a new window by default,
-            // so fix that. Although this is normally dreadful behavior not to allow the
-            // user to be in full control, in this case, we don't want to lose our place
-            // in the transcript, and if one is used to handling it from the room view
-            // (where links do open in a new window by default), one might be caught
-            // very off-guard and end up all discombobulated. Can't have that!
+            // so fix that. Although it is normally considered dreadful behavior to wrest
+            // this control out of the user's hands, in this case, we don't want to lose
+            // our place in the transcript, and if one is used to handling it from the
+            // room view (where links do open in a new window by default), one might be
+            // caught very off-guard and end up all discombobulated. Can't have that!
             if (IS_TRANSCRIPT || IS_SEARCH)
             {
                userLink[0].setAttribute('target', '_blank');
@@ -247,35 +265,70 @@
                   fkey: fkeyChat,
                   text: messageText,
                 })
-                .done(resolve)
+                .done(() =>
+                {
+                   // The transcript and search pages do not auto-update when a message is edited,
+                   // so force a refresh at this point.
+                   if (IS_TRANSCRIPT || IS_SEARCH)
+                   {
+                      setTimeout(() => { window.location.reload(); },
+                                 1000);
+                   }
+
+                   resolve();
+                })
                 .fail(reject);
       });
    }
 
    /**
-    * Edits a chat message from the User Stalker bot on the current chat server to add strike-through formatting in the appropriate place.
+    * Edits a chat message from the User Stalker bot on the current chat server to prepend and/or append text in the appropriate places.
+    * @param {number} messageId      The ID of the chat message to edit.
+    * @param {string} messagePrefix  The string to prepend to the chat message.
+    * @param {string} messageSuffix  The string to append to the chat message.
+    */
+   async function bookendChatMessage(messageId, messagePrefix, messageSuffix)
+   {
+      const fkeyChat    = await getChatFkey();
+      const messageText = await getChatMessageText(fkeyChat, messageId);
+      const messageTag  = messageText.match(/\[ \[.*\]\(.*\) \] /)[0];
+      if (!messageTag)
+      {
+         throw new Error('Failed to find expected pattern in chat message from User Stalker bot.');
+      }
+      const messageContents = messageText.slice(messageTag.length);
+      return editChatMessage(fkeyChat,
+                             messageId,
+                             `${messageTag}${messagePrefix}${messageContents}${messageSuffix}`);
+   }
+
+   /**
+    * Edits a chat message from the User Stalker bot on the current chat server to add strike-through formatting.
     * @param {number} messageId  The ID of the chat message to edit.
     */
    async function strikeoutChatMessage(messageId)
    {
       const STRIKEOUT_MARKDOWN = '---';
+      return bookendChatMessage(messageId, STRIKEOUT_MARKDOWN, STRIKEOUT_MARKDOWN);
+   }
 
-      const fkeyChat      = await getChatFkey();
-      const messageText   = await getChatMessageText(fkeyChat, messageId);
-      const messagePrefix = messageText.match(/\[ \[.*\]\(.*\) \] /)[0];
-      if (!messagePrefix)
-      {
-         throw new Error('Failed to find expected pattern in chat message from User Stalker bot.');
-      }
-      const messageContents = messageText.slice(messagePrefix.length);
-      return editChatMessage(fkeyChat,
-                             messageId,
-                             `${messagePrefix}${STRIKEOUT_MARKDOWN}${messageContents}${STRIKEOUT_MARKDOWN}`);
+   /**
+    * Edits a chat message from the User Stalker bot on the current chat server to add a checkmark.
+    * @param {number} messageId  The ID of the chat message to edit.
+    */
+   async function checkmarkChatMessage(messageId)
+   {
+      return bookendChatMessage(messageId, `${CHECK_EMOJI} `, '');
    }
 
    /**********************************************
     * Main Site General Helper Functions
     **********************************************/
+
+   function getUserIdFromUrl(userUrl)
+   {
+      return Number(userUrl.match(/(?:\/u(?:sers)?\/)(-?\d+)\//)[1]);
+   }
 
    /**
     * Retrieves the "ticks" value from the specified site.
@@ -657,7 +710,7 @@
    }
 
    /**********************************************
-    * Userscript UI & Handlers
+    * Userscript UI & Handlers: Nuke Button
     **********************************************/
 
    function createDestroyOptions()
@@ -770,19 +823,14 @@
    function onClickNukeButton()
    {
       const nukeButton       = $(this);
-
       const chatMessage      = nukeButton.parent();
       const chatMessageText  = chatMessage.text();
       const detectionReasons = chatMessageText.substring(chatMessageText.indexOf('(') + 1,
                                                          chatMessageText.indexOf(')'));
-
       const messageId        = this.dataset.messageid;
       const userUrl          = this.dataset.userurl;
-
-      const userId           = Number(userUrl.match(/-?\d+/));
-
+      const userId           = getUserIdFromUrl(userUrl);
       const siteHostname     = new URL(userUrl).hostname;
-
       getUserInfofromApi(siteHostname, userId).then((userInfo) =>
       {
          swal(
@@ -807,7 +855,7 @@
            },
            dangerMode         : true,
            closeOnEsc         : true,
-           closeOnClickOutside: false,
+           closeOnClickOutside: true,
            content            : createDestroyPopupContent(),
          })
          .then((result) =>
@@ -843,14 +891,6 @@
 
                         swal.stopLoading();
                         swal.close();
-
-                        // The transcript and search pages do not auto-update when a message is edited,
-                        // so force a refresh at this point.
-                        if (IS_TRANSCRIPT || IS_SEARCH)
-                        {
-                           setTimeout(() => { window.location.reload(); },
-                                      1000);
-                        }
                      })
                      .catch((ex) =>
                      {
@@ -884,24 +924,74 @@
       });
    }
 
+   /**********************************************
+    * Userscript UI & Handlers: Check Button
+    **********************************************/
+
+   function onClickCheckButton()
+   {
+      const checkButton  = $(this);
+      const chatMessage  = checkButton.parent();
+      const messageId    = this.dataset.messageid;
+      const userUrl      = this.dataset.userurl;
+      const userId       = getUserIdFromUrl(userUrl);
+      const siteHostname = new URL(userUrl).hostname;
+      getUserInfofromApi(siteHostname, userId).then((userInfo) =>
+      {
+         if (confirm(`Mark the user account "${userInfo.display_name}" as appearing to be legitimate?`))
+         {
+            checkmarkChatMessage(messageId).then(() =>
+            {
+               checkButton.remove();
+            })
+            .catch((ex) =>
+            {
+               alert('Failed to edit the bot\'s chat message to add a checkmark.\n\n' + ex);
+            });
+         }
+      })
+      .catch((ex) =>
+      {
+         alert('Failed to get the display name of the user to validate from the SE API.\n\n' + ex);
+      });
+   }
+
+
+   /**********************************************
+    * Userscript UI & Handlers: Styles
+    **********************************************/
 
    function appendStyles()
    {
       const styles = `
 <style>
+img.userstalker-nuke-button,
+span.userstalker-check-button
+{
+   cursor: pointer;
+}
 img.userstalker-nuke-button
 {
    width: 16px;
    height: 16px;
    position: relative;
    top: -3px;
-   cursor: pointer;
+   color: #000000;
    opacity: 0.66;
 }
 img.userstalker-nuke-button:hover,
 img.userstalker-nuke-button:active
 {
    opacity: 1;
+}
+span.userstalker-check-button
+{
+   color: #00CC00;
+}
+span.userstalker-check-button:hover,
+span.userstalker-check-button:active
+{
+   color: #008800;
 }
 
 .swal-overlay,
