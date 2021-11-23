@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.0
+// @version      3.0.1
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -258,27 +258,44 @@
     */
    async function editChatMessage(fkeyChat, messageId, messageText)
    {
-      return new Promise(function(resolve, reject)
+      do
       {
-         $.post(`${window.location.origin}/messages/${messageId}`,
-                {
-                  fkey: fkeyChat,
-                  text: messageText,
-                })
-                .done(() =>
-                {
-                   // The transcript and search pages do not auto-update when a message is edited,
-                   // so force a refresh at this point.
-                   if (IS_TRANSCRIPT || IS_SEARCH)
-                   {
-                      setTimeout(() => { window.location.reload(); },
-                                 1000);
-                   }
+         for (let attempts = 0; attempts < 3; ++attempts)
+         {
+            try
+            {
+               const result = await Promise.resolve($.post(`${window.location.origin}/messages/${messageId}`,
+                                                    {
+                                                      fkey: fkeyChat,
+                                                      text: messageText,
+                                                    }));
 
-                   resolve();
-                })
-                .fail(reject);
-      });
+               if (result)
+               {
+                  // The transcript and search pages do not auto-update when a message is edited,
+                  // so force a refresh at this point.
+                  if (IS_TRANSCRIPT || IS_SEARCH)
+                  {
+                     setTimeout(() => { window.location.reload(); },
+                                1000);
+                  }
+
+                  return;
+               }
+               else
+               {
+                  alert('DEBUG: Operation failed, without throwing an exception. This should probably be investigated, as it was not the expected behavior.');
+                  throw new Error('Failed to edit chat message.');
+               }
+            }
+            catch (ex)
+            {
+               const timeout = (2 * (attempts + 1));
+               console.warn(`Failed to edit chat message; trying again in ${timeout} seconds.`);
+               await new Promise((result) => setTimeout(result, (timeout * 1000)));
+            }
+         }
+      } while (confirm('Failed to edit chat message, despite multiple retries. Do you want to try again now?'));
    }
 
    /**
