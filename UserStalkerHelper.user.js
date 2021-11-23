@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.1
+// @version      3.0.2
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -850,6 +850,17 @@
       const siteHostname     = new URL(userUrl).hostname;
       getUserInfofromApi(siteHostname, userId).then((userInfo) =>
       {
+         // Disable the built-in chat buttons while the dialog is being displayed,
+         // in order to prevent inadvertently posting nonsense messages in the chat
+         // room, as I've done several times now. (Since the SweetAlert dialog is
+         // technically non-modal, its being displayed does not prevent interactions
+         // ith the page like a prompt() or alert() dialog would.)
+         const chatButtons    = document.getElementById('chat-buttons');
+         const chatButtonsAll = chatButtons.querySelectorAll('button');
+         chatButtonsAll.forEach((btn) => { btn.disabled = true; });
+         const reenableChatButtons = function() { chatButtonsAll.forEach((btn) => { btn.disabled = false; }); };
+
+         // Display the confirmation dialog.
          swal(
          {
            title  : 'Destroy the user "' + userInfo.display_name + '" because\u2026',
@@ -908,6 +919,7 @@
 
                         swal.stopLoading();
                         swal.close();
+                        reenableChatButtons();
                      })
                      .catch((ex) =>
                      {
@@ -915,6 +927,7 @@
 
                         swal.stopLoading();
                         swal.close();
+                        reenableChatButtons();
                      });
                   })
                   .catch((ex) =>
@@ -923,6 +936,7 @@
 
                      swal.stopLoading();
                      swal.close();
+                     reenableChatButtons();
                   });
                })
                .catch((ex) =>
@@ -931,7 +945,12 @@
 
                   swal.stopLoading();
                   swal.close();
+                  reenableChatButtons();
                });
+            }
+            else
+            {
+               reenableChatButtons();
             }
          });
       })
