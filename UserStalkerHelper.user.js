@@ -5,12 +5,12 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.2
+// @version      3.0.3
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
 // @include      /^https?:\/\/chat\.stackexchange\.com\/(?:rooms\/|search.*[?&]room=|transcript\/)(?:59667)(?:[&\/].*$|$)/
-// @include      /^https?:\/\/chat\.stackoverflow\.com\/(?:rooms\/|search.*[?&]room=|transcript\/)(?:239107)(?:[&\/].*$|$)/
+// @include      /^https?:\/\/chat\.stackoverflow\.com\/(?:rooms\/|search.*[?&]room=|transcript\/)(?:239107|239425)(?:[&\/].*$|$)/
 // @require      https://unpkg.com/sweetalert/dist/sweetalert.min.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM_xmlhttpRequest
@@ -850,15 +850,21 @@
       const siteHostname     = new URL(userUrl).hostname;
       getUserInfofromApi(siteHostname, userId).then((userInfo) =>
       {
-         // Disable the built-in chat buttons while the dialog is being displayed,
-         // in order to prevent inadvertently posting nonsense messages in the chat
-         // room, as I've done several times now. (Since the SweetAlert dialog is
-         // technically non-modal, its being displayed does not prevent interactions
+         // Disable the built-in chat buttons and input textarea while the dialog is
+         // being displayed, in order to prevent inadvertently posting nonsense messages
+         // in the chat room, as I've done several times now. (Since the SweetAlert dialog
+         // is technically non-modal, its being displayed does not prevent interactions
          // ith the page like a prompt() or alert() dialog would.)
          const chatButtons    = document.getElementById('chat-buttons');
          const chatButtonsAll = chatButtons.querySelectorAll('button');
+         const chatInput      = document.getElementById('input');
+         chatInput.disabled   = true;
          chatButtonsAll.forEach((btn) => { btn.disabled = true; });
-         const reenableChatButtons = function() { chatButtonsAll.forEach((btn) => { btn.disabled = false; }); };
+         const reenableChatInput = function()
+         {
+            chatInput.disabled = false;
+            chatButtonsAll.forEach((btn) => { btn.disabled = false; });
+         };
 
          // Display the confirmation dialog.
          swal(
@@ -919,7 +925,7 @@
 
                         swal.stopLoading();
                         swal.close();
-                        reenableChatButtons();
+                        reenableChatInput();
                      })
                      .catch((ex) =>
                      {
@@ -927,7 +933,7 @@
 
                         swal.stopLoading();
                         swal.close();
-                        reenableChatButtons();
+                        reenableChatInput();
                      });
                   })
                   .catch((ex) =>
@@ -936,7 +942,7 @@
 
                      swal.stopLoading();
                      swal.close();
-                     reenableChatButtons();
+                     reenableChatInput();
                   });
                })
                .catch((ex) =>
@@ -945,12 +951,12 @@
 
                   swal.stopLoading();
                   swal.close();
-                  reenableChatButtons();
+                  reenableChatInput();
                });
             }
             else
             {
-               reenableChatButtons();
+               reenableChatInput();
             }
          });
       })
