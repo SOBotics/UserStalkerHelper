@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.3
+// @version      3.0.4
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
@@ -260,7 +260,7 @@
    {
       do
       {
-         for (let attempts = 0; attempts < 3; ++attempts)
+         for (let attempts = 0; attempts < 5; ++attempts)
          {
             try
             {
