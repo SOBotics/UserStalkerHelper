@@ -1,19 +1,44 @@
 // ==UserScript==
-// @name         UserStalkerHelper
+// @name         User Stalker Helper
 // @namespace    https://github.com/SOBotics/UserStalker
-// @description  Helper userscript for interacting with reports from the User Stalker bot.
+// @description  Helper userscript for interacting with reports from the User Stalker bot posted in certain Stack Exchange chat rooms.
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.4
+// @version      3.0.5
+// @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @supportURL   https://github.com/SOBotics/UserStalkerHelper/issues
+// @icon         https://raw.githubusercontent.com/SOBotics/UserStalkerHelper/master/UserStalkerHelper.png
+// @icon64       https://raw.githubusercontent.com/SOBotics/UserStalkerHelper/master/UserStalkerHelper64.png
+//
+// @match        http*://chat.stackexchange.com/rooms/59667/*
+// @match        http*://chat.stackexchange.com/transcript/59667
+// @match        http*://chat.stackexchange.com/search*room=59667
+//
+// @match        http*://chat.stackoverflow.com/rooms/239107/*
+// @match        http*://chat.stackoverflow.com/transcript/239107
+// @match        http*://chat.stackoverflow.com/search*room=239107
+//
+// @match        http*://chat.stackoverflow.com/rooms/239425/*
+// @match        http*://chat.stackoverflow.com/transcript/239425
+// @match        http*://chat.stackoverflow.com/search*room=239425
+//
 // @include      /^https?:\/\/chat\.stackexchange\.com\/(?:rooms\/|search.*[?&]room=|transcript\/)(?:59667)(?:[&\/].*$|$)/
 // @include      /^https?:\/\/chat\.stackoverflow\.com\/(?:rooms\/|search.*[?&]room=|transcript\/)(?:239107|239425)(?:[&\/].*$|$)/
+//
+// @connect      stackoverflow.com
+// @connect      superuser.com
+// @connect      serverfault.com
+// @connect      askubuntu.com
+// @connect      mathoverflow.net
+// @connect      stackexchange.com
+//
 // @require      https://unpkg.com/sweetalert/dist/sweetalert.min.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM_xmlhttpRequest
+// @run-at       document-end
 // ==/UserScript==
 /* eslint-disable no-multi-spaces */
 /* global $:readonly    */  // SO/SE sites always provides jQuery, free-of-charge
@@ -42,6 +67,8 @@
                                }[window.location.hostname];
    const BOMB_EMOJI          = String.fromCodePoint(0x1F4A3);
    const BOMB_IMAGE_URL      = 'https://raw.githubusercontent.com/joypixels/emoji-assets/master/png/32/1f4a3.png';
+   const RENAME_EMOJI        = String.fromCodePoint(0x1F4DD);
+   const RENAME_IMAGE_URL    = 'https://raw.githubusercontent.com/joypixels/emoji-assets/master/png/32/1f4dd.png';
    const CHECK_EMOJI         = String.fromCodePoint(0x2714);
    const CHECK_IMAGE_URL     = 'https://raw.githubusercontent.com/joypixels/emoji-assets/master/png/32/2714.png';
    const DESTROY_OPTIONS     =
@@ -75,9 +102,9 @@
    // from the transcript pages, so we just punt in that case. It cannot actually do
    // any *harm* to run this script without moderator privileges; it just won't do
    // any *good*, either.
-   if (!((($('.topbar-menu-links').text().includes('?'))) /* for search      */ ||
-         (CHAT?.RoomUsers?.current()?.is_moderator)       /* for normal room */ ||
-         (CHAT && IS_TRANSCRIPT)                          /* for transcript  */))
+   if (!((CHAT?.RoomUsers?.current?.().is_moderator)           /* for normal room */ ||
+         (($('.topbar-menu-links').text().includes('\u2666'))) /* for search      */ ||
+         (CHAT && IS_TRANSCRIPT)                               /* for transcript  */))
    {
       return;
    }
@@ -88,7 +115,8 @@
 
       $('#getmore, #getmore-mine').click(() => decorateExistingMessages(500));
 
-      $('body').on('click', 'img.userstalker-nuke-button', onClickNukeButton);
+      $('body').on('click', 'img.userstalker-nuke-button'  , onClickNukeButton);
+      $('body').on('click', 'img.userstalker-rename-button', onClickRenameButton);
       $('body').on('click', 'span.userstalker-check-button', onClickCheckButton);
 
       decorateExistingMessages(0);
@@ -164,7 +192,17 @@
                                                      + ` data-userurl="${userUrl}"`
                                                      + '>'
                                                      + '&nbsp;'
-                                                     + ($2 ?? '<span class="userstalker-check-button"'
+
+                                                     + ($2 ?? '<img class="userstalker-rename-button"'
+                                                     +        ` src="${RENAME_IMAGE_URL}"`
+                                                     +        ` alt="${RENAME_EMOJI}"`
+                                                     +        ' title="reset the display name and send the user a boilerplate message about it"'
+                                                     +        ' width="32" height="32"'
+                                                     +        ` data-messageid="${messageId}"`
+                                                     +        ` data-userurl="${userUrl}"`
+                                                     +        '>'
+                                                     +        '&nbsp;'
+                                                     +        '<span class="userstalker-check-button"'
                                                      +        ' title="mark this user account as appearing to be legitimate"'
                                                      +        ` data-messageid="${messageId}"`
                                                      +        ` data-userurl="${userUrl}"`
@@ -481,12 +519,13 @@
    }
 
    /**
-    * Edits the profile for the specified user account on the specified site, removing all fields that might contain spam.
+    * Edits the profile for the specified user account on the specified site.
     * @param {string} mainSiteFkey  The fkey for the current (moderator) user on the main site.
     * @param {string} siteHostname  The full host name of a main site.
     * @param {number} userId        The ID of the user account to edit.
+    * @param {object} profileData   The user profile data fields, to pass as the "data" for the request.
     */
-   async function bowdlerizeUserInfo(mainSiteFkey, siteHostname, userId)
+   async function editUserInfo(mainSiteFkey, siteHostname, userId, profileData)
    {
       if ((mainSiteFkey == null) ||
           (siteHostname == null) ||
@@ -508,11 +547,57 @@
       // SE developers.
       await new Promise((result) => setTimeout(result, 2000));
 
-      // Submit the request to bowdlerize the information in the user profile.
-      const data = new URLSearchParams(
+      // Ensure that certain fields in the specified data are set properly.
+      profileData.set('fkey', mainSiteFkey);
+      profileData.set('i1l', ticks);
+
+      // Submit the request to edit the user profile.
+      return GM_XML_HTTP_REQUEST(
       {
-         'fkey'           : mainSiteFkey,
-         'i1l'            : ticks,
+         method : 'POST',
+         url    : `//${siteHostname}/users/edit/${userId}/post`,
+         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+         data   : profileData.toString()
+      });
+   }
+
+   /**
+    * Edits the profile for the specified user account on the specified site, resetting the display name to the default (auto-generated) value.
+    * @param {string} mainSiteFkey  The fkey for the current (moderator) user on the main site.
+    * @param {string} siteHostname  The full host name of a main site.
+    * @param {number} userId        The ID of the user account to edit.
+    */
+   async function resetUserDisplayName(mainSiteFkey, siteHostname, userId)
+   {
+      const profileData = new URLSearchParams(
+      {
+         'fields'         : '',
+         'author'         : '',
+         'push'           : true,       // copy changes to all sites
+         'DisplayName'    : '',         // clear this field (will implicitly set to default/auto)
+       //'RealName'       : '',         // do not reset this field
+       //'ProfileImageUrl': '',         // do not reset this field
+       //'Location'       : '',         // do not reset this field
+       //'LocationPlaceId': '',         // do not reset this field
+       //'Title'          : '',         // do not reset this field
+       //'WebsiteUrl'     : '',         // do not reset this field
+       //'TwitterUrl'     : '',         // do not reset this field
+       //'GitHubUrl'      : '',         // do not reset this field
+       //'AboutMe'        : '',         // do not reset this field
+      });
+      return editUserInfo(mainSiteFkey, siteHostname, userId, profileData);
+   }
+
+   /**
+    * Edits the profile for the specified user account on the specified site, removing all fields that might contain spam.
+    * @param {string} mainSiteFkey  The fkey for the current (moderator) user on the main site.
+    * @param {string} siteHostname  The full host name of a main site.
+    * @param {number} userId        The ID of the user account to edit.
+    */
+   async function bowdlerizeUserInfo(mainSiteFkey, siteHostname, userId)
+   {
+      const profileData = new URLSearchParams(
+      {
          'fields'         : '',
          'author'         : '',
          'push'           : true,       // copy changes to all sites
@@ -527,13 +612,7 @@
          'GitHubUrl'      : '',
          'AboutMe'        : '',
       });
-      return GM_XML_HTTP_REQUEST(
-      {
-         method : 'POST',
-         url    : `//${siteHostname}/users/edit/${userId}/post`,
-         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-         data   : data.toString()
-      });
+      return editUserInfo(mainSiteFkey, siteHostname, userId, profileData);
    }
 
    function sendModMessage(mainSiteFkey,
@@ -606,6 +685,55 @@
       });
    }
 
+   async function destroyUserHelper(mainSiteFkey,
+                                    siteHostname,
+                                    userInfo,
+                                    details)
+   {
+      do
+      {
+         for (let attempts = 0; attempts < 10; ++attempts)
+         {
+            try
+            {
+               const data = new URLSearchParams(
+               {
+                  'fkey'                : mainSiteFkey,
+                  'annotation'          : '',
+                  'deleteReasonDetails' : '',
+                  'mod-actions'         : 'destroy',
+                  'destroyReason'       : 'This user was created to post spam or nonsense and has no other positive participation',
+                  'destroyReasonDetails': details,
+               });
+
+               const result = await GM_XML_HTTP_REQUEST(
+               {
+                  method : 'POST',
+                  url    : `//${siteHostname}/admin/users/${userInfo.user_id}/destroy`,
+                  headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                  data   : data.toString(),
+               });
+
+               if ((result != null) && (result.status == 200))
+               {
+                  return true;
+               }
+               else
+               {
+                  throw new Error(`Failed to destroy user account: API returned error ${result.status}.`);
+               }
+            }
+            catch (ex)
+            {
+               const timeout = (attempts + 1);
+               console.warn(ex + ` Trying again in ${timeout} second(s).`);
+               await new Promise((result) => setTimeout(result, (timeout * 1000)));
+            }
+         }
+      } while (confirm('Failed to destroy user account, despite multiple retries. Do you want to try again now?'));
+      return false;
+   }
+
    function destroyUser(mainSiteFkey,
                         siteHostname,
                         userInfo,
@@ -659,25 +787,9 @@
                                + `\nWebsite URL:      ${userInfo.website_url}`
                                + `\nAvatar Image:     ${userInfo.profile_image}`
                                ;
-               const data = new URLSearchParams(
-               {
-                  'fkey'                : mainSiteFkey,
-                  'annotation'          : '',
-                  'deleteReasonDetails' : '',
-                  'mod-actions'         : 'destroy',
-                  'destroyReason'       : 'This user was created to post spam or nonsense and has no other positive participation',
-                  'destroyReasonDetails': details,
-               });
-               GM_XML_HTTP_REQUEST(
-               {
-                  method : 'POST',
-                  url    : `//${siteHostname}/admin/users/${userInfo.user_id}/destroy`,
-                  headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-                  data   : data.toString(),
-                  onload : resolve,
-                  onerror: reject,
-                  onabort: reject,
-               });
+               destroyUserHelper(mainSiteFkey, siteHostname, userInfo, details)
+               .then(resolve)
+               .catch(reject);
             })
             .catch(reject);
          })
@@ -860,7 +972,7 @@
          const chatInput      = document.getElementById('input');
          chatInput.disabled   = true;
          chatButtonsAll.forEach((btn) => { btn.disabled = true; });
-         const reenableChatInput = function()
+         const reenableChatInput = () =>
          {
             chatInput.disabled = false;
             chatButtonsAll.forEach((btn) => { btn.disabled = false; });
@@ -917,7 +1029,7 @@
                            fullDetails,
                            templateName,
                            suspendReason)
-                     .then(() =>
+                  .then(() =>
                   {
                      strikeoutChatMessage(messageId).then(() =>
                      {
@@ -967,6 +1079,84 @@
    }
 
    /**********************************************
+    * Userscript UI & Handlers: Rename Button
+    **********************************************/
+
+   function onClickRenameButton()
+   {
+      const renameButton = $(this);
+      const chatMessage  = renameButton.parent();
+      const messageId    = this.dataset.messageid;
+      const userUrl      = this.dataset.userurl;
+      const userId       = getUserIdFromUrl(userUrl);
+      const siteHostname = new URL(userUrl).hostname;
+      getUserInfofromApi(siteHostname, userId).then((userInfo) =>
+      {
+         if (confirm(`Reset the display name for the user account "${userInfo.display_name}" to its default (automatically-generated) value (i.e., "userXXXXXX"), `
+                   + 'and send the user a boilerplate message informing them of the change and reminding them of the Code of Conduct?'))
+         {
+            getMainSiteFkey(siteHostname)
+            .then((mainSiteFkey) =>
+            {
+               const url = new URL(userUrl);
+               sendModMessage(mainSiteFkey,
+                              siteHostname,
+                              userInfo.user_id,
+                              'inappropriate user name',
+                              'for rule violations',
+                              'Hello,\n'
+                            + '\n'
+                            + 'We\'re writing in reference to your account:\n'
+                            + '\n'
+                            + `https://${url.hostname}${url.pathname}\n`
+                            + '\n'
+                            + `A moderator has reviewed your account and determined that the user name you chose was inappropriate. While you should feel free to express your personal identity, this is a family-friendly site and all user names must comply with our <a href="https://${siteHostname}/conduct">Code of Conduct</a>. We cannot make any exceptions to this policy, regardless of what your intentions may be.\n`
+                            + '\n'
+                            + 'Therefore, we will be resetting your user name to a default, automatically-generated value that is based on your unique numeric user ID.\n'
+                            + '\n'
+                            + 'You may keep this default name, or you may choose a new one, if you like. However, please ensure that any name you choose is an appropriate way to represent yourself on this site, that it <a href="https://meta.stackexchange.com/questions/22232/">does not use expletives</a> or other harsh language, and that it does not defame other users or groups. If you have any questions about this policy, please let us know.\n'
+                            + '\n'
+                            + 'Regards,  \n'
+                            + 'The Moderation Team',
+                              true,
+                              0)
+               .then(() =>
+               {
+                  resetUserDisplayName(mainSiteFkey, siteHostname, userInfo.user_id)
+                  .then(() =>
+                  {
+                     checkmarkChatMessage(messageId).then(() =>
+                     {
+                        renameButton.remove();
+                     })
+                     .catch((ex) =>
+                     {
+                        alert('Failed to edit the bot\'s chat message to add a checkmark.\n\n' + ex);
+                     });
+                  })
+                  .catch((ex) =>
+                  {
+                     alert('Failed to change the user\'s display name.\n\n' + ex);
+                  });
+               })
+               .catch((ex) =>
+               {
+                  alert('Failed to send the user a moderator message.\n\n' + ex);
+               });
+            })
+            .catch((ex) =>
+            {
+               alert('Failed to get your main site account\'s FKEY.\n\n' + ex);
+            })
+         }
+      })
+      .catch((ex) =>
+      {
+         alert('Failed to get the display name of the user to validate from the SE API.\n\n' + ex);
+      });
+   }
+
+   /**********************************************
     * Userscript UI & Handlers: Check Button
     **********************************************/
 
@@ -998,7 +1188,6 @@
       });
    }
 
-
    /**********************************************
     * Userscript UI & Handlers: Styles
     **********************************************/
@@ -1008,11 +1197,13 @@
       const styles = `
 <style>
 img.userstalker-nuke-button,
+img.userstalker-rename-button,
 span.userstalker-check-button
 {
    cursor: pointer;
 }
-img.userstalker-nuke-button
+img.userstalker-nuke-button,
+img.userstalker-rename-button
 {
    width: 16px;
    height: 16px;
@@ -1022,7 +1213,9 @@ img.userstalker-nuke-button
    opacity: 0.66;
 }
 img.userstalker-nuke-button:hover,
-img.userstalker-nuke-button:active
+img.userstalker-nuke-button:active,
+img.userstalker-rename-button:hover,
+img.userstalker-rename-button:active
 {
    opacity: 1;
 }
@@ -1034,6 +1227,12 @@ span.userstalker-check-button:hover,
 span.userstalker-check-button:active
 {
    color: #008800;
+}
+
+#input:disabled,
+#chat-buttons button:disabled
+{
+   background: inherit;
 }
 
 .swal-overlay,
