@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.5
+// @version      3.0.6
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -14,19 +14,15 @@
 // @icon64       https://raw.githubusercontent.com/SOBotics/UserStalkerHelper/master/UserStalkerHelper64.png
 //
 // @match        http*://chat.stackexchange.com/rooms/59667/*
-// @match        http*://chat.stackexchange.com/transcript/59667
 // @match        http*://chat.stackexchange.com/search*room=59667
+// @match        http*://chat.stackexchange.com/transcript/*
 //
 // @match        http*://chat.stackoverflow.com/rooms/239107/*
-// @match        http*://chat.stackoverflow.com/transcript/239107
 // @match        http*://chat.stackoverflow.com/search*room=239107
+// @match        http*://chat.stackoverflow.com/transcript/*
 //
 // @match        http*://chat.stackoverflow.com/rooms/239425/*
-// @match        http*://chat.stackoverflow.com/transcript/239425
 // @match        http*://chat.stackoverflow.com/search*room=239425
-//
-// @include      /^https?:\/\/chat\.stackexchange\.com\/(?:rooms\/|search.*[?&]room=|transcript\/)(?:59667)(?:[&\/].*$|$)/
-// @include      /^https?:\/\/chat\.stackoverflow\.com\/(?:rooms\/|search.*[?&]room=|transcript\/)(?:239107|239425)(?:[&\/].*$|$)/
 //
 // @connect      stackoverflow.com
 // @connect      superuser.com
@@ -811,7 +807,7 @@
          // skipping the sending of an email to the user's registered email address. Although most
          // users won't see this message (since it'll only be displayed on the site, and we're about
          // to destroy their account), it is possible they see it upon re-creation of the account.
-         // In that case, they can only see the  first few words of the message in the global inbox
+         // In that case, they can only see the first few words of the message in the global inbox
          // (the system will notify them of a new message, though); they *cannot* click on the inbox
          // item to view the full message. Therefore, we must keep it *very* short, if they are to
          // be able to see anything. It's difficult to give much guidance, but this is a pretty good
@@ -962,21 +958,32 @@
       const siteHostname     = new URL(userUrl).hostname;
       getUserInfofromApi(siteHostname, userId).then((userInfo) =>
       {
-         // Disable the built-in chat buttons and input textarea while the dialog is
-         // being displayed, in order to prevent inadvertently posting nonsense messages
-         // in the chat room, as I've done several times now. (Since the SweetAlert dialog
-         // is technically non-modal, its being displayed does not prevent interactions
-         // ith the page like a prompt() or alert() dialog would.)
-         const chatButtons    = document.getElementById('chat-buttons');
-         const chatButtonsAll = chatButtons.querySelectorAll('button');
-         const chatInput      = document.getElementById('input');
-         chatInput.disabled   = true;
-         chatButtonsAll.forEach((btn) => { btn.disabled = true; });
-         const reenableChatInput = () =>
+         let reenableChatInput = () => { };
+         try
          {
-            chatInput.disabled = false;
-            chatButtonsAll.forEach((btn) => { btn.disabled = false; });
-         };
+            if (!IS_TRANSCRIPT && !IS_SEARCH)
+            {
+               // Disable the built-in chat buttons and input textarea while the dialog is
+               // being displayed, in order to prevent inadvertently posting nonsense messages
+               // in the chat room, as I've done several times now. (Since the SweetAlert dialog
+               // is technically non-modal, its being displayed does not prevent interactions
+               // with the page like a prompt() or alert() dialog would.)
+               const chatButtons    = document.getElementById('chat-buttons');
+               const chatButtonsAll = chatButtons.querySelectorAll('button');
+               const chatInput      = document.getElementById('input');
+               chatInput.disabled   = true;
+               chatButtonsAll.forEach((btn) => { btn.disabled = true; });
+               reenableChatInput = () =>
+               {
+                  chatInput.disabled = false;
+                  chatButtonsAll.forEach((btn) => { btn.disabled = false; });
+               };
+            }
+         }
+         catch (ex)
+         {
+            console.warn('Failed to disable chat buttons and textarea: ' + ex);
+         }
 
          // Display the confirmation dialog.
          swal(
