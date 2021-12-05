@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.6
+// @version      3.0.7
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -170,6 +170,25 @@
          const userLink = $message.find('.content > a + a[href*="/users/"]');
          if (userLink.length > 0)
          {
+            // The transcript and search pages don't open links in a new window by default,
+            // so fix that. Although it is normally considered dreadful behavior to wrest
+            // this control out of the user's hands, in this case, we don't want to lose
+            // our place in the transcript, and if one is used to handling it from the
+            // room view (where links do open in a new window by default), one might be
+            // caught very off-guard and end up all discombobulated. Can't have that!
+            //
+            // The simple solution for this is to check (IS_TRANSCRIPT || IS_SEARCH)
+            // and set the "target" attribute to "_blank". However, instead of "_blank",
+            // we can use "blank", which will reuse the same window/tab. This opens up
+            // a new possibility, where the "target" attribute is forcibly set to "blank"
+            // everywhere, including in the normal chat view (which defaults to opening
+            // links in a new tab, as if "_blank" were set). This makes it possible to
+            // rapidly assess multiple user profiles by clicking one, moving the window
+            // to a second screen, and then clicking additional ones to update the
+            // profile displayed in that same window.
+            userLink[0].target = 'blank';
+            
+            // Add the inline links.
             const userUrl     = userLink.attr('href');
             const content     = userLink.parent();
             const contentHtml = content.html();
