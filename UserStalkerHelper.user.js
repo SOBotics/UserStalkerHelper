@@ -959,10 +959,11 @@
       const chatMessageText  = chatMessage.text();
       const detectionReasons = chatMessageText.substring(chatMessageText.indexOf('(') + 1,
                                                          chatMessageText.indexOf(')'));
-      const messageId        = this.dataset.messageid;
-      const userUrl          = this.dataset.userurl;
+      const messageId        = nukeButton[0].dataset.messageid;
+      const userUrl          = nukeButton[0].dataset.userurl;
       const userId           = getUserIdFromUrl(userUrl);
       const siteHostname     = new URL(userUrl).hostname;
+
       getUserInfofromApi(siteHostname, userId).then((userInfo) =>
       {
          let reenableChatInput = () => { };
