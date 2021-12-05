@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.7
+// @version      3.0.8
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -192,8 +192,7 @@
             const userUrl     = userLink.attr('href');
             const content     = userLink.parent();
             const contentHtml = content.html();
-            const pattern     = /(User Stalker<\/a> \] (?!✔ )?)(✔ )?(?!<strike>)/;
-            content.html(contentHtml.replace(pattern,
+            content.html(contentHtml.replace(/(User Stalker<\/a> \] (?!✔ )?)(✔ )?(?!<strike>)/,
                                              function($0, $1, $2)
                                              {
                                                 return $1
