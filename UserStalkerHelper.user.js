@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.8
+// @version      3.0.9
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -782,6 +782,7 @@
             {
                const details = destroyDetails.trim()
                                + '\n'
+                               + `\nDisplay Name:     ${userInfo.display_name}`
                                + `\nReal Name:        ${pii.name}`
                                + `\nEmail Address:    ${pii.email}`
                                + `\nIP Address:       ${pii.ip} (tor: ${pii.tor})`
