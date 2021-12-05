@@ -224,17 +224,6 @@
                                                      +        '&nbsp;')
                                                      + '&nbsp;';
                                              }));
-
-            // The transcript and search pages don't open links in a new window by default,
-            // so fix that. Although it is normally considered dreadful behavior to wrest
-            // this control out of the user's hands, in this case, we don't want to lose
-            // our place in the transcript, and if one is used to handling it from the
-            // room view (where links do open in a new window by default), one might be
-            // caught very off-guard and end up all discombobulated. Can't have that!
-            if (IS_TRANSCRIPT || IS_SEARCH)
-            {
-               userLink[0].setAttribute('target', '_blank');
-            }
          }
       }
    }
