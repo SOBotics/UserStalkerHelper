@@ -187,7 +187,7 @@
             // to a second screen, and then clicking additional ones to update the
             // profile displayed in that same window.
             userLink[0].target = 'blank';
-            
+
             // Add the inline links.
             const userUrl     = userLink.attr('href');
             const content     = userLink.parent();
