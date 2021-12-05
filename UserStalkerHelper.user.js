@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.9
+// @version      3.0.10
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -15,14 +15,19 @@
 //
 // @match        http*://chat.stackexchange.com/rooms/59667/*
 // @match        http*://chat.stackexchange.com/search*room=59667
+//
+// @match        http*://chat.stackexchange.com/rooms/132064/*
+// @match        http*://chat.stackexchange.com/search*room=132064
+//
 // @match        http*://chat.stackexchange.com/transcript/*
 //
 // @match        http*://chat.stackoverflow.com/rooms/239107/*
 // @match        http*://chat.stackoverflow.com/search*room=239107
-// @match        http*://chat.stackoverflow.com/transcript/*
 //
 // @match        http*://chat.stackoverflow.com/rooms/239425/*
 // @match        http*://chat.stackoverflow.com/search*room=239425
+//
+// @match        http*://chat.stackoverflow.com/transcript/*
 //
 // @connect      stackoverflow.com
 // @connect      superuser.com
