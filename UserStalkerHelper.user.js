@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.10
+// @version      3.0.11
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -113,6 +113,12 @@
    (() =>  // initialization function
    {
       appendStyles();
+
+      if (document.location.href.includes('chat.stackoverflow.com/rooms/239425') ||
+          document.location.href.includes('chat.stackexchange.com/rooms/132064'))
+      {
+         document.getElementById('chat-body').classList.add('userstalker-testing');
+      }
 
       $('#getmore, #getmore-mine').click(() => decorateExistingMessages(500));
 
@@ -1217,6 +1223,11 @@
    {
       const styles = `
 <style>
+#chat-body.userstalker-testing
+{
+   background: bisque;
+}
+
 img.userstalker-nuke-button,
 img.userstalker-rename-button,
 span.userstalker-check-button
