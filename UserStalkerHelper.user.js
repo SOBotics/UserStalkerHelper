@@ -184,6 +184,8 @@
          const userLink = $message.find('.content > a + a[href*="/users/"]');
          if (userLink.length > 0)
          {
+            userLink[0].classList.add('userstalker-user-link');
+
             // The transcript and search pages don't open links in a new window by default,
             // so fix that. Although it is normally considered dreadful behavior to wrest
             // this control out of the user's hands, in this case, we don't want to lose
@@ -1313,6 +1315,11 @@ span.userstalker-cross-button:hover,
 span.userstalker-cross-button:active
 {
    color: #AA0000;
+}
+
+a.userstalker-user-link
+{
+   font-weight: bold;
 }
 
 #input:disabled,
