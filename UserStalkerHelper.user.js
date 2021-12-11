@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.11
+// @version      3.0.12
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -1225,7 +1225,11 @@
 <style>
 #chat-body.userstalker-testing
 {
-   background: bisque;
+   background: #E0E0E0;
+}
+#chat-body.userstalker-testing #input-area
+{
+   background: #FFFFFF;
 }
 
 img.userstalker-nuke-button,
