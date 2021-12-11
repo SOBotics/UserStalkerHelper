@@ -223,7 +223,7 @@
 
                                                      + '&nbsp;&nbsp;'
                                                      + '<span class="userstalker-cross-button"'
-                                                     + ' title="strike-through this user account, marking it as already destroyed"'
+                                                     + ' title="mark this user account as already destroyed"'
                                                      + ` data-messageid="${messageId}"`
                                                      + ` data-userurl="${userUrl}"`
                                                      + `>${CROSS_EMOJI}</span>`
@@ -243,7 +243,7 @@
                                                            : '<img class="userstalker-rename-button"'
                                                      +       ` src="${RENAME_IMAGE_URL}"`
                                                      +       ` alt="${RENAME_EMOJI}"`
-                                                     +       ' title="reset the display name and send the user a boilerplate message about it"'
+                                                     +       ' title="reset this user\'s display name and send a boilerplate mod message about it"'
                                                      +       ' width="32" height="32"'
                                                      +       ` data-messageid="${messageId}"`
                                                      +       ` data-userurl="${userUrl}"`
