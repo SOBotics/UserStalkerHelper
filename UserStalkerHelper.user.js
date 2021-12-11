@@ -1273,6 +1273,11 @@
 {
    background: #FFFFFF;
 }
+#chat-body.userstalker-testing .messages
+{
+   background-color: #D0D0D0;
+   border-color: #BBBBBB;
+}
 
 img.userstalker-nuke-button,
 img.userstalker-rename-button,
