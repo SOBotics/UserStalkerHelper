@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.1.0
+// @version      3.1.1
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -213,6 +213,22 @@
                                              {
                                                 return $1
                                                      + '&nbsp;'
+
+                                                     + ($2 ?? '<span class="userstalker-check-button"'
+                                                     +        ' title="mark this user account as appearing to be legitimate"'
+                                                     +        ` data-messageid="${messageId}"`
+                                                     +        ` data-userurl="${userUrl}"`
+                                                     +        `>${CHECK_EMOJI}</span>`
+                                                     +        '&nbsp;')
+
+                                                     + '&nbsp;&nbsp;'
+                                                     + '<span class="userstalker-cross-button"'
+                                                     + ' title="strike-through this user account, marking it as already destroyed"'
+                                                     + ` data-messageid="${messageId}"`
+                                                     + ` data-userurl="${userUrl}"`
+                                                     + `>${CROSS_EMOJI}</span>`
+                                                     + '&nbsp;&nbsp;&nbsp;'
+
                                                      + '<img class="userstalker-nuke-button"'
                                                      + ` src="${BOMB_IMAGE_URL}"`
                                                      + ` alt="${BOMB_EMOJI}"`
@@ -221,29 +237,19 @@
                                                      + ` data-messageid="${messageId}"`
                                                      + ` data-userurl="${userUrl}"`
                                                      + '>'
-                                                     + '&nbsp;&nbsp;'
-                                                     + ($2 ?? '<img class="userstalker-rename-button"'
-                                                     +        ` src="${RENAME_IMAGE_URL}"`
-                                                     +        ` alt="${RENAME_EMOJI}"`
-                                                     +        ' title="reset the display name and send the user a boilerplate message about it"'
-                                                     +        ' width="32" height="32"'
-                                                     +        ` data-messageid="${messageId}"`
-                                                     +        ` data-userurl="${userUrl}"`
-                                                     +        '>'
-                                                     +        '&nbsp;&nbsp;'
-                                                     +        '<span class="userstalker-check-button"'
-                                                     +        ' title="mark this user account as appearing to be legitimate"'
-                                                     +        ` data-messageid="${messageId}"`
-                                                     +        ` data-userurl="${userUrl}"`
-                                                     +        `>${CHECK_EMOJI}</span>`
-                                                     +        '&nbsp;&nbsp;')
-                                                     + '<span class="userstalker-cross-button"'
-                                                     + ' title="strike-through this user account, marking it as already destroyed"'
-                                                     + ` data-messageid="${messageId}"`
-                                                     + ` data-userurl="${userUrl}"`
-                                                     + `>${CROSS_EMOJI}</span>`
-                                                     + '&nbsp;&nbsp;'
-                                                     + '&nbsp;';
+                                                     + '&nbsp;&nbsp;&nbsp;'
+
+                                                     + ($2 ? ''
+                                                           : '<img class="userstalker-rename-button"'
+                                                     +       ` src="${RENAME_IMAGE_URL}"`
+                                                     +       ` alt="${RENAME_EMOJI}"`
+                                                     +       ' title="reset the display name and send the user a boilerplate message about it"'
+                                                     +       ' width="32" height="32"'
+                                                     +       ` data-messageid="${messageId}"`
+                                                     +       ` data-userurl="${userUrl}"`
+                                                     +       '>'
+                                                     +       '&nbsp;&nbsp;&nbsp;')
+                                                     ;
                                              }));
          }
       }
