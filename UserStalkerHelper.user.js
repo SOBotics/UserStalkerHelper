@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.0.12
+// @version      3.1.0
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -72,6 +72,8 @@
    const RENAME_IMAGE_URL    = 'https://raw.githubusercontent.com/joypixels/emoji-assets/master/png/32/1f4dd.png';
    const CHECK_EMOJI         = String.fromCodePoint(0x2714);
    const CHECK_IMAGE_URL     = 'https://raw.githubusercontent.com/joypixels/emoji-assets/master/png/32/2714.png';
+   const CROSS_EMOJI         = String.fromCodePoint(0x274C);
+   const CROSS_IMAGE_URL     = 'https://raw.githubusercontent.com/joypixels/emoji-assets/master/png/32/274c.png';
    const DESTROY_OPTIONS     =
    {
       spammer:
@@ -125,6 +127,7 @@
       $('body').on('click', 'img.userstalker-nuke-button'  , onClickNukeButton);
       $('body').on('click', 'img.userstalker-rename-button', onClickRenameButton);
       $('body').on('click', 'span.userstalker-check-button', onClickCheckButton);
+      $('body').on('click', 'span.userstalker-cross-button', onClickCrossButton);
 
       decorateExistingMessages(0);
 
@@ -216,8 +219,7 @@
                                                      + ` data-messageid="${messageId}"`
                                                      + ` data-userurl="${userUrl}"`
                                                      + '>'
-                                                     + '&nbsp;'
-
+                                                     + '&nbsp;&nbsp;'
                                                      + ($2 ?? '<img class="userstalker-rename-button"'
                                                      +        ` src="${RENAME_IMAGE_URL}"`
                                                      +        ` alt="${RENAME_EMOJI}"`
@@ -226,13 +228,19 @@
                                                      +        ` data-messageid="${messageId}"`
                                                      +        ` data-userurl="${userUrl}"`
                                                      +        '>'
-                                                     +        '&nbsp;'
+                                                     +        '&nbsp;&nbsp;'
                                                      +        '<span class="userstalker-check-button"'
                                                      +        ' title="mark this user account as appearing to be legitimate"'
                                                      +        ` data-messageid="${messageId}"`
                                                      +        ` data-userurl="${userUrl}"`
                                                      +        `>${CHECK_EMOJI}</span>`
-                                                     +        '&nbsp;')
+                                                     +        '&nbsp;&nbsp;')
+                                                     + '<span class="userstalker-cross-button"'
+                                                     + ' title="strike-through this user account, marking it as already destroyed"'
+                                                     + ` data-messageid="${messageId}"`
+                                                     + ` data-userurl="${userUrl}"`
+                                                     + `>${CROSS_EMOJI}</span>`
+                                                     + '&nbsp;&nbsp;'
                                                      + '&nbsp;';
                                              }));
          }
@@ -1216,6 +1224,38 @@
    }
 
    /**********************************************
+    * Userscript UI & Handlers: Cross Button
+    **********************************************/
+
+   function onClickCrossButton()
+   {
+      const crossButton  = $(this);
+      const chatMessage  = crossButton.parent();
+      const messageId    = this.dataset.messageid;
+      const userUrl      = this.dataset.userurl;
+      const userId       = getUserIdFromUrl(userUrl);
+      const siteHostname = new URL(userUrl).hostname;
+      getUserInfofromApi(siteHostname, userId).then((userInfo) =>
+      {
+         if (confirm(`Mark the user account "${userInfo.display_name}" as having been destroyed?`))
+         {
+            strikeoutChatMessage(messageId).then(() =>
+            {
+               crossButton.remove();
+            })
+            .catch((ex) =>
+            {
+               alert('Failed to edit the bot\'s chat message to add strike-out formatting.\n\n' + ex);
+            });
+         }
+      })
+      .catch((ex) =>
+      {
+         alert('Failed to get the display name of the user to validate from the SE API.\n\n' + ex);
+      });
+   }
+
+   /**********************************************
     * Userscript UI & Handlers: Styles
     **********************************************/
 
@@ -1234,7 +1274,8 @@
 
 img.userstalker-nuke-button,
 img.userstalker-rename-button,
-span.userstalker-check-button
+span.userstalker-check-button,
+span.userstalker-cross-button
 {
    cursor: pointer;
 }
@@ -1263,6 +1304,15 @@ span.userstalker-check-button:hover,
 span.userstalker-check-button:active
 {
    color: #008800;
+}
+span.userstalker-cross-button
+{
+   color: #DD6666;
+}
+span.userstalker-cross-button:hover,
+span.userstalker-cross-button:active
+{
+   color: #AA0000;
 }
 
 #input:disabled,
