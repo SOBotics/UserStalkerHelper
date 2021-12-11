@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.1.1
+// @version      3.1.2
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -212,7 +212,6 @@
                                              function($0, $1, $2)
                                              {
                                                 return $1
-                                                     + '&nbsp;'
 
                                                      + ($2 ?? '<span class="userstalker-check-button"'
                                                      +        ' title="mark this user account as appearing to be legitimate"'
