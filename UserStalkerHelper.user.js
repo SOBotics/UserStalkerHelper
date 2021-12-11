@@ -1239,27 +1239,17 @@
       const crossButton  = $(this);
       const chatMessage  = crossButton.parent();
       const messageId    = this.dataset.messageid;
-      const userUrl      = this.dataset.userurl;
-      const userId       = getUserIdFromUrl(userUrl);
-      const siteHostname = new URL(userUrl).hostname;
-      getUserInfofromApi(siteHostname, userId).then((userInfo) =>
+      if (confirm('Mark this user account as having been destroyed?'))
       {
-         if (confirm(`Mark the user account "${userInfo.display_name}" as having been destroyed?`))
+         strikeoutChatMessage(messageId).then(() =>
          {
-            strikeoutChatMessage(messageId).then(() =>
-            {
-               crossButton.remove();
-            })
-            .catch((ex) =>
-            {
-               alert('Failed to edit the bot\'s chat message to add strike-out formatting.\n\n' + ex);
-            });
-         }
-      })
-      .catch((ex) =>
-      {
-         alert('Failed to get the display name of the user to validate from the SE API.\n\n' + ex);
-      });
+            crossButton.remove();
+         })
+         .catch((ex) =>
+         {
+            alert('Failed to edit the bot\'s chat message to add strike-out formatting.\n\n' + ex);
+         });
+      }
    }
 
    /**********************************************
