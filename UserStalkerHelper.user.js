@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.1.2
+// @version      3.2.0
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -403,6 +403,27 @@
    async function checkmarkChatMessage(messageId)
    {
       return bookendChatMessage(messageId, `${CHECK_EMOJI} `, '');
+   }
+
+   function extractDetectionReasonsFromChatMessageText(chatMessageText)
+   {
+      const iReasonsStart = chatMessageText.indexOf('(') + 1;
+      let   iReasonsEnd   = chatMessageText.indexOf(')');
+      if (iReasonsEnd === -1)
+      {
+         // If the character count got too long to fit into a single message, the bot
+         // will automatically break it up into multiple messages, but this means
+         // that the trailing parenthesis will not be found, so just take it all
+         // the way to the end.
+         iReasonsEnd = chatMessageText.length;
+      }
+
+      let detectionReasons = chatMessageText.substring(iReasonsStart, iReasonsEnd);
+      if (iReasonsEnd === -1)
+      {
+         detectionReasons += '...';
+      }
+      return detectionReasons;
    }
 
    /**********************************************
@@ -984,8 +1005,7 @@
       const nukeButton       = $(this);
       const chatMessage      = nukeButton.parent();
       const chatMessageText  = chatMessage.text();
-      const detectionReasons = chatMessageText.substring(chatMessageText.indexOf('(') + 1,
-                                                         chatMessageText.indexOf(')'));
+      const detectionReasons = extractDetectionReasonsFromChatMessageText(chatMessageText);
       const messageId        = nukeButton[0].dataset.messageid;
       const userUrl          = nukeButton[0].dataset.userurl;
       const userId           = getUserIdFromUrl(userUrl);
