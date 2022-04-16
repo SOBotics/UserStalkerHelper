@@ -381,7 +381,7 @@
       {
          throw new Error('Failed to find expected pattern in chat message from User Stalker bot.');
       }
-      const messageContents = messageText.slice(messageTag.length);
+      const messageContents = messageText.slice(messageTag.length, 500 - (messagePrefix.length + messageSuffix.length));
       return editChatMessage(fkeyChat,
                              messageId,
                              `${messageTag}${messagePrefix}${messageContents}${messageSuffix}`);
