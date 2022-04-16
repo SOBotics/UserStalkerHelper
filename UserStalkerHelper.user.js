@@ -35,6 +35,7 @@
 // @connect      askubuntu.com
 // @connect      mathoverflow.net
 // @connect      stackexchange.com
+// @connect      stackapps.com
 //
 // @require      https://unpkg.com/sweetalert/dist/sweetalert.min.js
 // @grant        GM.xmlHttpRequest
