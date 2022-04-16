@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.2.0
+// @version      3.2.1
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
