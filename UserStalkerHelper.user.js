@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.2.1
+// @version      3.2.2
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -381,7 +381,11 @@
       {
          throw new Error('Failed to find expected pattern in chat message from User Stalker bot.');
       }
-      const messageContents = messageText.slice(messageTag.length, 500 - (messagePrefix.length + messageSuffix.length));
+      
+      // Prevent the modified chat message from becoming longer than the maximum supported length.
+      const messageContents = messageText.slice(messageTag.length,
+                                                500 - (messagePrefix.length + messageSuffix.length));
+      
       return editChatMessage(fkeyChat,
                              messageId,
                              `${messageTag}${messagePrefix}${messageContents}${messageSuffix}`);
