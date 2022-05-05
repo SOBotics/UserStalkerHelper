@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.2.3
+// @version      3.2.4
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -103,8 +103,6 @@
    /**********************************************
     * Initialization
     **********************************************/
-
-   console.log(window.location.pathname);
 
    // Attempt to restrict the running of this script to users with moderator privileges.
    // Unfortunately, there's no way to detect whether the current user is a moderator
