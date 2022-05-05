@@ -5,7 +5,7 @@
 // @author       Cody Gray
 // @contributor  Oleg Valter
 // @contributor  VLAZ
-// @version      3.2.2
+// @version      3.2.3
 // @homepageURL  https://github.com/SOBotics/UserStalkerHelper
 // @updateURL    https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
 // @downloadURL  https://github.com/SOBotics/UserStalkerHelper/raw/master/UserStalkerHelper.user.js
@@ -13,21 +13,23 @@
 // @icon         https://raw.githubusercontent.com/SOBotics/UserStalkerHelper/master/UserStalkerHelper.png
 // @icon64       https://raw.githubusercontent.com/SOBotics/UserStalkerHelper/master/UserStalkerHelper64.png
 //
-// @match        http*://chat.stackexchange.com/rooms/59667/*
-// @match        http*://chat.stackexchange.com/search*room=59667
+// @match        *://chat.stackexchange.com/rooms/59667/*
+// @match        *://chat.stackexchange.com/search*room=59667
 //
-// @match        http*://chat.stackexchange.com/rooms/132064/*
-// @match        http*://chat.stackexchange.com/search*room=132064
+// @match        *://chat.stackexchange.com/rooms/132064/*
+// @match        *://chat.stackexchange.com/search*room=132064
 //
-// @match        http*://chat.stackexchange.com/transcript/*
+// @match        *://chat.stackexchange.com/transcript/*
+// @match        *://chat.stackexchange.com//transcript/*
 //
-// @match        http*://chat.stackoverflow.com/rooms/239107/*
-// @match        http*://chat.stackoverflow.com/search*room=239107
+// @match        *://chat.stackoverflow.com/rooms/239107/*
+// @match        *://chat.stackoverflow.com/search*room=239107
 //
-// @match        http*://chat.stackoverflow.com/rooms/239425/*
-// @match        http*://chat.stackoverflow.com/search*room=239425
+// @match        *://chat.stackoverflow.com/rooms/239425/*
+// @match        *://chat.stackoverflow.com/search*room=239425
 //
-// @match        http*://chat.stackoverflow.com/transcript/*
+// @match        *://chat.stackoverflow.com/transcript/*
+// @match        *://chat.stackoverflow.com//transcript/*
 //
 // @connect      stackoverflow.com
 // @connect      superuser.com
@@ -61,7 +63,8 @@
    const SE_API_KEY          = 'F9msnTSnUmKMKD7BnjHAxA((';
    const GM_XML_HTTP_REQUEST = ((typeof GM !== 'undefined') ? GM.xmlHttpRequest.bind(GM)
                                                             : GM_xmlhttpRequest);  /* eslint-disable-line no-undef */
-   const IS_TRANSCRIPT       = window.location.pathname.startsWith('/transcript');
+   const IS_TRANSCRIPT       = window.location.pathname.startsWith('/transcript') ||
+                               window.location.pathname.startsWith('//transcript');
    const IS_SEARCH           = window.location.pathname.startsWith('/search');
    const BOT_ACCOUNT_ID      = {
                                   'chat.stackexchange.com': 530642,
@@ -100,6 +103,8 @@
    /**********************************************
     * Initialization
     **********************************************/
+
+   console.log(window.location.pathname);
 
    // Attempt to restrict the running of this script to users with moderator privileges.
    // Unfortunately, there's no way to detect whether the current user is a moderator
